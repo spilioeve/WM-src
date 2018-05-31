@@ -26,14 +26,15 @@ class CandidateEvents:
         self.refiner= FrameNetRefiner()
         self.lmtzr = WordNetLemmatizer()
 
-    def getVerbEvents(self, sentenceIndex, refine= True):
+    def getVerbEvents(self, sentenceIndex, events, entities, refine=True):
         data= self.stanfordLoader.getDataPerSentence(sentenceIndex)
         #sentence, tokens, mapping, loc, time, depCurr = self.data[sentenceIndex]
         pos= data["pos"]
         lemmas= data["lemmas"]
         tokens= data["tokens"]
         sentence= data["sentence"]
-        sentenceEvents = []
+        spans = data['spans']
+        sentenceEvents = events
         for index in range(len(lemmas)):
         #for item in lemmas:
             if pos[index] in verbTags and lemmas[index] not in aux:
@@ -46,15 +47,18 @@ class CandidateEvents:
                     token= tokens[index]
                     ###Somewhere here differentiate to get the list of entities and the list of nominal Events????
                     ##Pass only entities into SRL finder, because otherwise it is gonna be inefficient
-                    ##Can we do it in another slot? COnfigure
+                    ##Can we do it in another slot? Configure
 
-                    srlOut, nomBool= self.recognizeNomEventuality(token, data['NPs'])
-                    if not nomBool:
-                        srlOut= self.getDependencies(sentenceIndex, index+1, data['NPs'])
-                    newEvent={"trigger": token["token"], "lemma": lemmas[index], "start": token["start"], "end": token["end"], "index": index,
-                              "frame": frame, "temporal": data["temporal"], "location": data["location"]}
-                    newEvent.update(srlOut)
-                    sentenceEvents.append(newEvent)
+                    #srlOut, nomBool= self.recognizeNomEventuality(token, data['NPs'])
+                    span= spans[index]
+                    if span in events:
+                        pass
+                    else:
+                        srlOut= self.getDependencies(sentenceIndex, index+1, entities)
+                        newEvent={"trigger": token["token"], "lemma": lemmas[index], "start": token["start"], "end": token["end"], "index": index,
+                                  "frame": frame, "temporal": data["temporal"], "location": data["location"]}
+                        newEvent.update(srlOut)
+                        sentenceEvents.append(newEvent)
         return sentenceEvents
 
     def getLocAndTime(self, sentenceIndex):
@@ -75,10 +79,11 @@ class CandidateEvents:
     def getAllEvents(self):
         allEvents=[]
         for index in range(self.stanfordLoader.getDataSize()):
-            verbalEvents= self.getVerbEvents(index)
-            nomEvents, entities= self.classifyNominals(index)
-            sentenceEvents= verbalEvents+ nomEvents
-            allEvents.append(sentenceEvents)
+            events, entities = self.classifyNominals(index)
+
+            events= self.getVerbEvents(index, events, entities)
+            #sentenceEvents= verbalEvents+ nomEvents
+            allEvents.append(events)
         return allEvents
 
     # def getEventsWithDependencies(self, sentenceIndex, entities):
@@ -92,20 +97,6 @@ class CandidateEvents:
     #         event.update(dependencies)
     #         eventsWithDeps.append(event)
     #     return eventsWithDeps
-
-    def recognizeNomEventuality(self, token, entities):
-        out = {'agent': "", 'patient': ""}
-        boolean=False
-        if token in entities:
-            boolean= True
-        else:
-            return out, boolean
-        if boolean:
-            for entity in entities:
-                eventuality= entity['eventuality']
-                if eventuality== token:
-                    out['patient']= entity
-        return out
 
     def getDependencies(self, sentenceIndex, index, entities):
         deps= self.stanfordLoader.getDependencies(sentenceIndex)
@@ -148,7 +139,8 @@ class CandidateEvents:
 
     def mapToEntity(self, terms, NPs):
         normalized=""
-        for np in NPs:
+        for span in NPs.keys():
+            np= NPs[span]
             entity= np["token"]
             norm= ""
             for term in terms:
@@ -181,24 +173,40 @@ class CandidateEvents:
         return currIndex
 
     def classifyNominals(self, sentenceIndex):
-        events = []
-        entities=[]
+        events = {}
+        entities={}
         data = self.stanfordLoader.getDataPerSentence(sentenceIndex)
         sentence = data["sentence"]
         nominals = data["NPs"]
         for item in nominals:
             words = item["token"].split(' ')
-            ###Filter from Ontology...
-            lemma = item['headLemma']
-            boolean, frames = self.refiner.refineWord(sentence, lemma, 'n')
-
-            if boolean:
-                events.append(
-                    {'trigger': words, 'frame': frames[0], 'location': data['location'], 'temporal': data['temporal'],
-                     'start': item['start'], 'end': item['end']})
+            span= (item['start'], item['end'])
+            if len(item['eventuality'])>0:
+                entities[span]= {'token': words, 'location': data['location'], 'temporal': data['temporal'], 'qualifier': item['qualifier']}
+                #entities.append(item)
+                event = item['eventuality']
+                lemma= event['lemma']
+                boolean, frames = self.refiner.refineWord(sentence, lemma, 'v')
+                if boolean:
+                    eventSpan= (event['start'], event['end'])
+                    events[eventSpan]= {'trigger': event['token'], 'location': data['location'], 'temporal': data['temporal'], 'patient': words, 'frame': frames[0]}
+                #events.append(item['eventuality'])
+                
             else:
-                entities.append({'trigger': words, 'location': data['location'], 'temporal': data['temporal'],
-                     'start': item['start'], 'end': item['end']})
+                ###Filter from Ontology...
+                lemma = item['headLemma']
+                boolean, frames = self.refiner.refineWord(sentence, lemma, 'n')
+                if boolean:
+                    events[span] = {'trigger': words, 'frame': frames[0], 'location': data['location'], 'temporal': data['temporal']}
+                    # events.append(
+                    #     {'trigger': words, 'frame': frames[0], 'location': data['location'], 'temporal': data['temporal'],
+                    #      'start': item['start'], 'end': item['end']})
+                else:
+                    #entities.append(item)
+                    entities[span] = {'trigger': words, 'location': data['location'], 'temporal': data['temporal'],
+                                      'qualifier': item['qualifier']}
+                    # entities.append({'trigger': words, 'location': data['location'], 'temporal': data['temporal'],
+                    #      'start': item['start'], 'end': item['end']})
         return events, entities
 
     def nominalEvents(self, sentence, candidateEvents):

@@ -22,6 +22,7 @@ class DataExtractor:
             pos=[]
             tokens=[]
             lemmas=[]
+            spans=[]
             time = ""
             loc = ""
             for index in range(len(sentTokens)):
@@ -36,17 +37,18 @@ class DataExtractor:
                 #ind= int(sentTokens[index]['index'])
                 start= int(sentTokens[index]["characterOffsetBegin"])
                 end= int(sentTokens[index]["characterOffsetEnd"])
-                tokens.append({"start": start, "end": end, "token":token, 'lemma': lemma})
+                tokens.append({"start": start, "end": end, "token":token, 'lemma': lemma, 'pos': str(sentTokens[index]['pos'])})
                 ner= sentTokens[index]["ner"]
                 if str(ner)== 'DATE':
                     time+= " " + token
                 elif str(ner)== "LOCATION":
                     loc+= " "+ token
                 lemmas.append(lemma)
+                spans.append((start, end))
                 #ner= str(sentTokens[index]['ner'])
                 #mapping.append({"start": start, "end": end, "pos": pos, "lemma": lemma, "index": ind, "token": token})
             nounPhrases= self.processParse(parse, tokens)
-            sentData = {"tokens": tokens, "lemmas": lemmas, "pos": pos, "location": loc, "temporal": time, "NPs": nounPhrases, "deps": dep, "sentence": sentence}
+            sentData = {"tokens": tokens, "lemmas": lemmas, "pos": pos, "location": loc, "temporal": time, "NPs": nounPhrases, "deps": dep, "sentence": sentence, 'spans': spans}
             #sentData.setNER(ner)
             self.structuredData.append(sentData)
 
@@ -76,10 +78,10 @@ class DataExtractor:
                 end= mapping[endIndex]['end']
                 lemma= mapping[endIndex]['lemma']
                 qualifier= ""
-                eventuality=""
+                eventuality={}
                 for item in mapping[startIndex:endIndex+1]:
                     if item['pos']== verbTags:
-                        eventuality= item['token']
+                        eventuality= {'token': item['token'], 'start': item['start'], 'end':item['end'], 'lemma': item['lemma']}
                     elif item['pos']== 'JJ':
                         qualifier= item['token']
                 nPhrases.append({'start': start, 'end': end, 'token': phrase, 'headLemma': lemma, 'eventuality': eventuality, 'qualifier': qualifier})
