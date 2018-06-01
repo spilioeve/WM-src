@@ -223,6 +223,16 @@ class ExcelWriter:
     def saveExcelFile(self, dir, name):
         self.wb.save(dir+'/'+ name)
 
+    def getIndexFromSpan(self, localIndex, spanList):
+        if spanList==0:
+            return ""
+        index=""
+        for span in spanList:
+            i= localIndex[span]
+            index+= i+ ', '
+        index.strip(', ')
+        return index
+
 
 
 

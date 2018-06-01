@@ -45,20 +45,15 @@ class CandidateEvents:
                     flag, frame= self.refiner.refineWord(sentence, lemmas[index], pos[index])
                 if flag:
                     token= tokens[index]
-                    ###Somewhere here differentiate to get the list of entities and the list of nominal Events????
-                    ##Pass only entities into SRL finder, because otherwise it is gonna be inefficient
-                    ##Can we do it in another slot? Configure
-
                     #srlOut, nomBool= self.recognizeNomEventuality(token, data['NPs'])
                     span= spans[index]
                     if span in events:
                         pass
                     else:
                         srlOut= self.getDependencies(sentenceIndex, index+1, entities)
-                        newEvent={"trigger": token["token"], "lemma": lemmas[index], "start": token["start"], "end": token["end"], "index": index,
+                        sentenceEvents[span] ={"trigger": token["token"], "lemma": lemmas[index], "index": index,
                                   "frame": frame, "temporal": data["temporal"], "location": data["location"]}
-                        newEvent.update(srlOut)
-                        sentenceEvents.append(newEvent)
+                        sentenceEvents[span].update(srlOut)
         return sentenceEvents
 
     def getLocAndTime(self, sentenceIndex):
@@ -76,15 +71,16 @@ class CandidateEvents:
         sentence, tokens, mapping, loc, time, depCurr = self.data[sentenceIndex]
         return tokens
 
-    def getAllEvents(self):
+    def getEvents_Entities(self):
         allEvents=[]
+        allEntities=[]
         for index in range(self.stanfordLoader.getDataSize()):
             events, entities = self.classifyNominals(index)
-
             events= self.getVerbEvents(index, events, entities)
             #sentenceEvents= verbalEvents+ nomEvents
             allEvents.append(events)
-        return allEvents
+            allEntities.append(entities)
+        return allEvents, allEntities
 
     # def getEventsWithDependencies(self, sentenceIndex, entities):
     #     events= self.getVerbEvents(sentenceIndex)
@@ -130,7 +126,7 @@ class CandidateEvents:
                         agent= allDeps[rel]
                     elif patient== []:
                         patient= allDeps[rel]
-        out={'agent':"", 'patient':""}
+        out={'agent':(0, ""), 'patient':(0, "")}
         if agent!= []:
             out['agent']= self.mapToEntity(agent, entities)
         if patient!= []:
@@ -139,16 +135,18 @@ class CandidateEvents:
 
     def mapToEntity(self, terms, NPs):
         normalized=""
+        mySpan=[]
         for span in NPs.keys():
             np= NPs[span]
-            entity= np["token"]
+            entity= np["trigger"]
             norm= ""
             for term in terms:
                 if term in entity:
                     norm= entity
+                    mySpan.append(span)
             normalized+= norm+', '
         normalized = normalized.strip(', ')
-        return normalized
+        return mySpan, normalized
 
     def writeEvents(self, sentIndex, currIndex, ws1, entities):
         events= self.getEventsWithDependencies(sentIndex)
@@ -189,7 +187,7 @@ class CandidateEvents:
                 boolean, frames = self.refiner.refineWord(sentence, lemma, 'v')
                 if boolean:
                     eventSpan= (event['start'], event['end'])
-                    events[eventSpan]= {'trigger': event['token'], 'location': data['location'], 'temporal': data['temporal'], 'patient': words, 'frame': frames[0]}
+                    events[eventSpan]= {'trigger': event['token'], 'location': data['location'], 'temporal': data['temporal'], 'patient': ([span], words), 'frame': frames[0]}
                 #events.append(item['eventuality'])
                 
             else:
@@ -203,8 +201,7 @@ class CandidateEvents:
                     #      'start': item['start'], 'end': item['end']})
                 else:
                     #entities.append(item)
-                    entities[span] = {'trigger': words, 'location': data['location'], 'temporal': data['temporal'],
-                                      'qualifier': item['qualifier']}
+                    entities[span] = {'trigger': words, 'qualifier': item['qualifier']}
                     # entities.append({'trigger': words, 'location': data['location'], 'temporal': data['temporal'],
                     #      'start': item['start'], 'end': item['end']})
         return events, entities
