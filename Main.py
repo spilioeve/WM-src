@@ -1,5 +1,6 @@
 from OdinElements import OdinRead
 from ManualRules import CandidateEvents
+from CausalityDetection import RSTModel
 from Utils import Quantifiers, ExcelWriter
 import os
 from openpyxl import Workbook
@@ -10,7 +11,7 @@ def writeOutput(files):
     path = os.getcwd()
     dir = os.path.dirname(path) + '/' + project
     writer= ExcelWriter(['Causal', 'Events', 'Entities'])
-    causalHeaders= ["Source_File", "Relation Index", "Relation", "Relation_Type", "Cause", "Effect", "Sentence"]
+    causalHeaders= ["Source_File", "Relation Index", "Relation", "Relation_Type", "Cause Index", "Cause", "Effect Index", "Effect", "Sentence"]
     eventHeaders= ["Source_File", "Event Index", "Relation", "Event_Type", "Location", "Time", 'Agent Index', "Agent", 'Patient Index', "Patient", "Sentence"]
     entityHeaders= ["Source_File", "Entity Index", "Entity", "Entity_Type", "Qualifier", "Sentence"]
     writer.writeRow("Causal", causalHeaders)
@@ -25,7 +26,6 @@ def writeOutput(files):
             relations = data[index]['CauseRelations']
             sentence = eventReader.getSentence(index)
             events, entities = eventReader.getEvents_Entities()
-
             entLocalIndex={}
             for span in entities.keys():
                 entity= entities[span]
@@ -43,15 +43,16 @@ def writeOutput(files):
                 agent = writer.getIndexFromSpan(entLocalIndex, event['agent'][0])
                 eventInfo = [str(file), 'E' + str(evIndex - 1), event["trigger"], event["frame"], event['location'],
                              event['time'], agent, event['agent'][1], patient, event['patient'][1], sentence]
+                writer.writeRow('Events', eventInfo)
 
+            rst = RSTModel(events, eventLocalIndex,sentence, 'causal')
             for relation in relations:
                 relIndex = writer.getIndex("Causal")
                 ##Fill those according to algorithm, probably in Utils section
                 ##Within-sentence position of event closer to cause/effect. Choose this one accordingly
-                #cause, effect=
+                cause, effect= rst.distanceHeuristic(relation["trigger"], relation['cause'], relation['effect'])
                 causalInfo = [str(file), 'R' + str(relIndex - 1), relation["trigger"], "CausalRelation",
-                             relation['cause'], relation['effect'], sentence]
-
+                             cause[0], cause[1], effect[0], effect[1], sentence]
                 writer.writeRow("Causal", causalInfo)
     # for file in files:
     #     data= odinData(file)
