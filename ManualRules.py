@@ -64,7 +64,8 @@ class CandidateEvents:
         return self.stanfordLoader.getDataSize()
 
     def getSentence(self, sentenceIndex):
-        sentence, tokens, mapping, loc, time, depCurr = self.data[sentenceIndex]
+        data= self.stanfordLoader.getDataPerSentence(sentenceIndex)
+        sentence= data['sentence']
         return sentence
 
     def getTokens(self, sentenceIndex):
@@ -138,7 +139,8 @@ class CandidateEvents:
         mySpan=[]
         for span in NPs.keys():
             np= NPs[span]
-            entity= np["trigger"]
+            entity= np["trigger"] ##token?
+
             norm= ""
             for term in terms:
                 if term in entity:
@@ -177,17 +179,17 @@ class CandidateEvents:
         sentence = data["sentence"]
         nominals = data["NPs"]
         for item in nominals:
-            words = item["token"].split(' ')
+            #words = item["token"].split(' ') ###Error why splitting that???
             span= (item['start'], item['end'])
             if len(item['eventuality'])>0:
-                entities[span]= {'token': words, 'location': data['location'], 'temporal': data['temporal'], 'qualifier': item['qualifier']}
+                entities[span]= {'token': item['token'], 'location': data['location'], 'temporal': data['temporal'], 'qualifier': item['qualifier']}
                 #entities.append(item)
                 event = item['eventuality']
                 lemma= event['lemma']
                 boolean, frames = self.refiner.refineWord(sentence, lemma, 'v')
                 if boolean:
                     eventSpan= (event['start'], event['end'])
-                    events[eventSpan]= {'trigger': event['token'], 'location': data['location'], 'temporal': data['temporal'], 'patient': ([span], words), 'frame': frames[0]}
+                    events[eventSpan]= {'trigger': event['token'], 'location': data['location'], 'temporal': data['temporal'], 'patient': ([span], item['token']), 'frame': frames[0]}
                 #events.append(item['eventuality'])
                 
             else:
@@ -195,13 +197,13 @@ class CandidateEvents:
                 lemma = item['headLemma']
                 boolean, frames = self.refiner.refineWord(sentence, lemma, 'n')
                 if boolean:
-                    events[span] = {'trigger': words, 'frame': frames[0], 'location': data['location'], 'temporal': data['temporal']}
+                    events[span] = {'trigger': item['token'], 'frame': frames[0], 'location': data['location'], 'temporal': data['temporal']}
                     # events.append(
                     #     {'trigger': words, 'frame': frames[0], 'location': data['location'], 'temporal': data['temporal'],
                     #      'start': item['start'], 'end': item['end']})
                 else:
                     #entities.append(item)
-                    entities[span] = {'trigger': words, 'qualifier': item['qualifier']}
+                    entities[span] = {'trigger': item['token'], 'qualifier': item['qualifier']}
                     # entities.append({'trigger': words, 'location': data['location'], 'temporal': data['temporal'],
                     #      'start': item['start'], 'end': item['end']})
         return events, entities

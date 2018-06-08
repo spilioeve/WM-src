@@ -20,12 +20,19 @@ class RSTModel:
             span = self.localIndex[index]
             if span in event:
                 return index, event['trigger']
-
+        return "", ""
 
     def distanceHeuristic(self, triggerRST, causalClause, effectClause):
         rIndex= self.sentence.index(triggerRST)
         cIndex= self.sentence.index(causalClause)
         eIndex = self.sentence.index(effectClause)
+        # cause= causalClause
+        # effect= effectClause
+        #  If not mapped to any event, then try to map it to some entity Ni. Then we must bring Ni in the event space
+        # This means that Ni was wrongly labeled as entity: instead it is a nominal event that we failed to detect
+        # this brings to light how RST interact back-and-forth with Event Detection
+        ####
+        #As an example use the first sentence of Par6. "Food insecurity levels" is not an easy-to-detect event
         if cIndex> eIndex:
             if rIndex< eIndex: #r<e<c
                 effect, i= self.locateEvents(rIndex, 'right')

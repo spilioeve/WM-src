@@ -5,6 +5,7 @@ class Ontology:
         self.dir= dir
         data1= self.getOntologyManualData()
         data2= self.getOntologyAutoData()
+        self.ontology= 'Ontology_v1.txt'
 
 
     def getOntologyManualData(self):
@@ -15,3 +16,10 @@ class Ontology:
 
     def getClass(self, lemma, pos):
         return 'None'
+
+    def writeOntology(self, data, headers):
+        f= open(self.ontology, 'w')
+
+        return 0
+
+headers= {}

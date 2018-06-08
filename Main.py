@@ -3,6 +3,7 @@ from ManualRules import CandidateEvents
 from CausalityDetection import RSTModel
 from Utils import Quantifiers, ExcelWriter
 import os
+import string
 from openpyxl import Workbook
 
 project= 'South_Sudan_Famine'
@@ -21,17 +22,23 @@ def writeOutput(files):
         data = odinData(file)
         eventReader = CandidateEvents(file, dir)
         numSentences = eventReader.dataSize()
+        allEvents, allEntities = eventReader.getEvents_Entities()
         for index in range(numSentences):
             sentEntities = data[index]['entities']
             relations = data[index]['CauseRelations']
             sentence = eventReader.getSentence(index)
-            events, entities = eventReader.getEvents_Entities()
             entLocalIndex={}
+            entities= allEntities[index]
+            events= allEvents[index]
+            print "Sentence"
+            print sentence
+            print events
+            print entities
             for span in entities.keys():
                 entity= entities[span]
                 entIndex= writer.getIndex('Entities')
                 entLocalIndex[span]= 'N' + str(entIndex - 1)
-                entInfo= [str(file), 'N' + str(entIndex - 1), entity["trigger"], '', entity['qualifier'], sentence]
+                entInfo= [str(file), 'N' + str(entIndex - 1), string.lower(entity["trigger"]), '', string.lower(entity['qualifier']), sentence]
                 writer.writeRow('Entities', entInfo)
 
             eventLocalIndex={}
@@ -42,18 +49,21 @@ def writeOutput(files):
                 patient= writer.getIndexFromSpan(entLocalIndex, event['patient'][0])
                 agent = writer.getIndexFromSpan(entLocalIndex, event['agent'][0])
                 eventInfo = [str(file), 'E' + str(evIndex - 1), event["trigger"], event["frame"], event['location'],
-                             event['time'], agent, event['agent'][1], patient, event['patient'][1], sentence]
+                             event['temporal'], agent, event['agent'][1], patient, event['patient'][1], sentence]
                 writer.writeRow('Events', eventInfo)
 
-            rst = RSTModel(events, eventLocalIndex,sentence, 'causal')
-            for relation in relations:
-                relIndex = writer.getIndex("Causal")
-                ##Fill those according to algorithm, probably in Utils section
-                ##Within-sentence position of event closer to cause/effect. Choose this one accordingly
-                cause, effect= rst.distanceHeuristic(relation["trigger"], relation['cause'], relation['effect'])
-                causalInfo = [str(file), 'R' + str(relIndex - 1), relation["trigger"], "CausalRelation",
-                             cause[0], cause[1], effect[0], effect[1], sentence]
-                writer.writeRow("Causal", causalInfo)
+            # rst = RSTModel(events, eventLocalIndex,sentence, 'causal')
+            # for relation in relations:
+            #     relIndex = writer.getIndex("Causal")
+            #     ##Fill those according to algorithm, probably in Utils section
+            #     ##Within-sentence position of event closer to cause/effect. Choose this one accordingly
+            #     cause, effect= rst.distanceHeuristic(relation["trigger"], relation['cause'], relation['effect'])
+            #     print relation['cause'], cause
+            #     print relation['effect'], effect
+            #     causalInfo = [str(file), 'R' + str(relIndex - 1), relation["trigger"], "CausalRelation",
+            #                  cause[0], cause[1], effect[0], effect[1], sentence]
+            #     writer.writeRow("Causal", causalInfo)
+    writer.saveExcelFile(dir, 'output/Para6' + 'v6.1.xlsx')
     # for file in files:
     #     data= odinData(file)
     #     eventReader= CandidateEvents(file, dir)
