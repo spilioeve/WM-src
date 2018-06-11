@@ -1,4 +1,4 @@
-
+import pdb
 
 class RSTModel:
 
@@ -6,10 +6,10 @@ class RSTModel:
         self.sentence= sentence
         self.relType= typeRel
         self.events= events
-        self.localIndex=eventLocalIndex
+        self.localIndex= eventLocalIndex
         #self.events= self.format(events, eventLocalIndex)
 
-    def format(self, event):
+    def format(self, key):
         # newEvents={}
         # for index in self.localIndex.keys():
         #     span= self.localIndex[index]
@@ -17,9 +17,9 @@ class RSTModel:
         #         newEvents[index]= events[span]
         # return newEvents
         for index in self.localIndex.keys():
-            span = self.localIndex[index]
-            if span in event:
-                return index, event['trigger']
+            #span = self.localIndex[index]
+            if index==key:
+                return self.localIndex[index], self.events[key]['trigger']
         return "", ""
 
     def distanceHeuristic(self, triggerRST, causalClause, effectClause):
@@ -38,6 +38,7 @@ class RSTModel:
                 effect, i= self.locateEvents(rIndex, 'right')
                 cause, j= self.locateEvents(i, 'right')
             elif rIndex< cIndex: #e<r<c
+
                 effect, i= self.locateEvents(rIndex, 'left')
                 cause, j= self.locateEvents(rIndex, 'right')
             else: #e<c<r
@@ -55,6 +56,7 @@ class RSTModel:
                 cause, j = self.locateEvents(i, 'left')
         fEffect= self.format(effect)
         fCause= self.format(cause)
+        print "Cause, effect"
         return fCause, fEffect
 
 
@@ -65,15 +67,18 @@ class RSTModel:
         else:
             keys.sort(reverse=True)
         event= self.events[keys[0]]
+        #pdb.set_trace()
         index=0
         for k in keys:
             event= self.events[k]
-            index= self.sentence.index(event['trigger'])
+            index = self.sentence.index(event['trigger'])
             if (direction=='right' and index>bound):
-                return event, index
+                #event = event.update({'key': k})
+                return k, index
             elif (direction=='left' and index<bound):
-                return event, index
-        return event, index
+                #event = event.update({'key': k})
+                return k, index
+        return (0, 0), index
 
 
     def determineRST(self, sentence):

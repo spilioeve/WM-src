@@ -2,8 +2,10 @@ import math
 import os
 import string
 from FrameNetRefine import FrameNetRefiner
+from OntologyMapping import Ontology
 from StanfordInfo import DataExtractor
 from nltk.stem.wordnet import WordNetLemmatizer
+
 
 
 targetN= ['sudan', 'famine', 'food', 'hunger', 'drought', 'nutrition']
@@ -19,11 +21,14 @@ nounTags= ["NN", "NNS", "NNP", "NNPS", "JJ"]
 
 class CandidateEvents:
 
-    def __init__(self, file, dir):
+    def __init__(self, file, dir, refiner='Ontology'):
         self.file= file
         self.dir = dir
         self.stanfordLoader= DataExtractor(file, dir)
-        self.refiner= FrameNetRefiner()
+        if refiner== 'FrameNet':
+            self.refiner= FrameNetRefiner()
+        else:
+            self.refiner = Ontology(dir)
         self.lmtzr = WordNetLemmatizer()
 
     def getVerbEvents(self, sentenceIndex, events, entities, refine=True):
@@ -41,11 +46,17 @@ class CandidateEvents:
             #if item["pos"] in verbTags and (item["lemma"] not in aux):
                 flag= True
                 frame= ""
+                # if self.ontology.ontologyTerm(lemmas[index]):
+                #     t, frame= self.ontology.getOntologyType(lemmas[index])
+                #     if t in ["events1", "events2"]:
+                #         flag= True
+                #     else:
+                #         flag= False
                 if refine:
                     flag, frame= self.refiner.refineWord(sentence, lemmas[index], pos[index])
                 if flag:
                     token= tokens[index]
-                    #srlOut, nomBool= self.recognizeNomEventuality(token, data['NPs'])
+                    ####srlOut, nomBool= self.recognizeNomEventuality(token, data['NPs'])
                     span= spans[index]
                     if span in events:
                         pass
@@ -68,9 +79,9 @@ class CandidateEvents:
         sentence= data['sentence']
         return sentence
 
-    def getTokens(self, sentenceIndex):
-        sentence, tokens, mapping, loc, time, depCurr = self.data[sentenceIndex]
-        return tokens
+    # def getTokens(self, sentenceIndex):
+    #     sentence, tokens, mapping, loc, time, depCurr = self.data[sentenceIndex]
+    #     return tokens
 
     def getEvents_Entities(self):
         allEvents=[]
@@ -140,13 +151,13 @@ class CandidateEvents:
         for span in NPs.keys():
             np= NPs[span]
             entity= np["trigger"] ##token?
-
             norm= ""
             for term in terms:
                 if term in entity:
                     norm= entity
                     mySpan.append(span)
-            normalized+= norm+', '
+            if norm!="":
+                normalized+= norm+', '
         normalized = normalized.strip(', ')
         return mySpan, normalized
 
@@ -179,33 +190,23 @@ class CandidateEvents:
         sentence = data["sentence"]
         nominals = data["NPs"]
         for item in nominals:
-            #words = item["token"].split(' ') ###Error why splitting that???
             span= (item['start'], item['end'])
+            lemmaH = item['headLemma']
+            booleanH, frameH = self.refiner.refineWord(sentence, lemmaH, 'n')
+            # print "entity" + lemmaH + '?'+frameH
             if len(item['eventuality'])>0:
-                entities[span]= {'token': item['token'], 'location': data['location'], 'temporal': data['temporal'], 'qualifier': item['qualifier']}
-                #entities.append(item)
+                entities[span]= {'trigger': item['token'], 'frame': frameH, 'qualifier': item['qualifier']}
                 event = item['eventuality']
                 lemma= event['lemma']
-                boolean, frames = self.refiner.refineWord(sentence, lemma, 'v')
+                boolean, frame = self.refiner.refineWord(sentence, lemma, 'v')
+                # print "Event" + lemma + '?'+frame
                 if boolean:
                     eventSpan= (event['start'], event['end'])
-                    events[eventSpan]= {'trigger': event['token'], 'location': data['location'], 'temporal': data['temporal'], 'patient': ([span], item['token']), 'frame': frames[0]}
-                #events.append(item['eventuality'])
-                
+                    events[eventSpan]= {'trigger': event['token'], 'location': data['location'], 'temporal': data['temporal'], 'agent':(0, ""), 'patient': ([span], item['token']), 'frame': frame}
+            elif booleanH:
+                events[span] = {'trigger': item['token'], 'frame': frameH, 'location': data['location'], 'temporal': data['temporal'], 'patient': (0, ""), 'agent':(0, "")}
             else:
-                ###Filter from Ontology...
-                lemma = item['headLemma']
-                boolean, frames = self.refiner.refineWord(sentence, lemma, 'n')
-                if boolean:
-                    events[span] = {'trigger': item['token'], 'frame': frames[0], 'location': data['location'], 'temporal': data['temporal']}
-                    # events.append(
-                    #     {'trigger': words, 'frame': frames[0], 'location': data['location'], 'temporal': data['temporal'],
-                    #      'start': item['start'], 'end': item['end']})
-                else:
-                    #entities.append(item)
-                    entities[span] = {'trigger': item['token'], 'qualifier': item['qualifier']}
-                    # entities.append({'trigger': words, 'location': data['location'], 'temporal': data['temporal'],
-                    #      'start': item['start'], 'end': item['end']})
+                entities[span] = {'trigger': item['token'], 'frame': frameH, 'qualifier': item['qualifier']}
         return events, entities
 
     def nominalEvents(self, sentence, candidateEvents):

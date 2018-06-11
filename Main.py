@@ -52,18 +52,23 @@ def writeOutput(files):
                              event['temporal'], agent, event['agent'][1], patient, event['patient'][1], sentence]
                 writer.writeRow('Events', eventInfo)
 
-            # rst = RSTModel(events, eventLocalIndex,sentence, 'causal')
-            # for relation in relations:
-            #     relIndex = writer.getIndex("Causal")
-            #     ##Fill those according to algorithm, probably in Utils section
-            #     ##Within-sentence position of event closer to cause/effect. Choose this one accordingly
-            #     cause, effect= rst.distanceHeuristic(relation["trigger"], relation['cause'], relation['effect'])
-            #     print relation['cause'], cause
-            #     print relation['effect'], effect
-            #     causalInfo = [str(file), 'R' + str(relIndex - 1), relation["trigger"], "CausalRelation",
-            #                  cause[0], cause[1], effect[0], effect[1], sentence]
-            #     writer.writeRow("Causal", causalInfo)
-    writer.saveExcelFile(dir, 'output/Para6' + 'v6.1.xlsx')
+            rst = RSTModel(events, eventLocalIndex,sentence, 'causal')
+            for relation in relations:
+                print "relation"
+                print relation
+                try:
+                    relIndex = writer.getIndex("Causal")
+                    ##Fill those according to algorithm, probably in Utils section
+                    ##Within-sentence position of event closer to cause/effect. Choose this one accordingly
+                    cause, effect= rst.distanceHeuristic(relation["trigger"], relation['cause'], relation['effect'])
+                    print relation['cause'], cause
+                    print relation['effect'], effect
+                    causalInfo = [str(file), 'R' + str(relIndex - 1), relation["trigger"], "CausalRelation",
+                                 cause[0], cause[1], effect[0], effect[1], sentence]
+                    writer.writeRow("Causal", causalInfo)
+                except:
+                    print "Relation Not found"
+    writer.saveExcelFile(dir, 'output/Para6' + 'v6.3.xlsx')
     # for file in files:
     #     data= odinData(file)
     #     eventReader= CandidateEvents(file, dir)

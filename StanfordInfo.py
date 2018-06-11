@@ -77,7 +77,7 @@ class DataExtractor:
                 startIndex, endIndex= self.findTerm(mapping, phrase.split(' '), 'token')
                 start= mapping[startIndex]['start']
                 end= mapping[endIndex]['end']
-                lemma= mapping[endIndex]['lemma']
+                lemma= mapping[endIndex-1]['lemma']
                 nounP=""
                 qualifier= ""
                 eventuality={}

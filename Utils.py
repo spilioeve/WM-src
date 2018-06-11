@@ -229,8 +229,9 @@ class ExcelWriter:
         index=""
         for span in spanList:
             i= localIndex[span]
-            index+= i+ ', '
-        index.strip(', ')
+            if i!= "":
+                index+= i+ ', '
+        index= index.strip(', ')
         return index
 
 
