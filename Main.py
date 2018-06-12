@@ -52,23 +52,42 @@ def writeOutput(files):
                              event['temporal'], agent, event['agent'][1], patient, event['patient'][1], sentence]
                 writer.writeRow('Events', eventInfo)
 
-            rst = RSTModel(events, eventLocalIndex,sentence, 'causal')
+            # rst = RSTModel(events, eventLocalIndex, sentence, [])
+            rstTriggers=[]
             for relation in relations:
-                print "relation"
-                print relation
-                try:
-                    relIndex = writer.getIndex("Causal")
-                    ##Fill those according to algorithm, probably in Utils section
-                    ##Within-sentence position of event closer to cause/effect. Choose this one accordingly
-                    cause, effect= rst.distanceHeuristic(relation["trigger"], relation['cause'], relation['effect'])
-                    print relation['cause'], cause
-                    print relation['effect'], effect
-                    causalInfo = [str(file), 'R' + str(relIndex - 1), relation["trigger"], "CausalRelation",
-                                 cause[0], cause[1], effect[0], effect[1], sentence]
-                    writer.writeRow("Causal", causalInfo)
-                except:
-                    print "Relation Not found"
-    writer.saveExcelFile(dir, 'output/Para6' + 'v6.3.xlsx')
+                trigger= relation['trigger']
+                if trigger not in rstTriggers:
+                    rstTriggers.append(trigger)
+            rst = RSTModel(events, eventLocalIndex, sentence, rstTriggers)
+            for trigger in rstTriggers:
+                    try:
+                        relIndex = writer.getIndex("Causal")
+                        cause, effect = rst.getCausalNodes(trigger)
+                        causalInfo = [str(file), 'R' + str(relIndex - 1), trigger, "CausalRelation",
+                                         cause[0], cause[1], effect[0], effect[1], sentence]
+                        writer.writeRow("Causal", causalInfo)
+                    except:
+                        print "Relation Not found"
+
+
+                #####Model simpler way instead of heuristic. Just split the sentence in the bound between the rst trigger. Then model ALL events we
+                ###can find in the left/right side of the bound
+                ###Additionally, if no event is found, can we just replace it by an entity and bring it "in front" as an Event???
+
+            # for relation in relations:
+            #     print "relation"
+            #     print relation
+            #     try:
+            #         relIndex = writer.getIndex("Causal")
+            #         cause, effect= rst.distanceHeuristic(relation["trigger"], relation['cause'], relation['effect'])
+            #         print relation['cause'], cause
+            #         print relation['effect'], effect
+            #         causalInfo = [str(file), 'R' + str(relIndex - 1), relation["trigger"], "CausalRelation",
+            #                      cause[0], cause[1], effect[0], effect[1], sentence]
+            #         writer.writeRow("Causal", causalInfo)
+            #     except:
+            #         print "Relation Not found"
+    writer.saveExcelFile(dir, 'output/Para6' + 'v6.4.xlsx')
     # for file in files:
     #     data= odinData(file)
     #     eventReader= CandidateEvents(file, dir)
