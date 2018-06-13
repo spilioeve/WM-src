@@ -2,49 +2,78 @@ import pdb
 
 class RSTModel:
 
-    def __init__(self, events, eventLocalIndex, sentence, rstTriggers):
+    def __init__(self, events, eventLocalIndex, sentence, lemmas):
         self.sentence= sentence
-        self.triggers= rstTriggers
+        self.triggers= self.detectCausalTriggers(lemmas)
         self.bounds= self.setBounds()
         self.events= events
         self.localIndex= eventLocalIndex
         #self.events= self.format(events, eventLocalIndex)
 
-    def format(self, key):
+    def format(self, keys):
+        eventsIndex=""
+        eventsSpan=""
         for index in self.localIndex.keys():
             #span = self.localIndex[index]
-            if index==key:
-                return self.localIndex[index], self.events[key]['trigger']
-        return "", ""
+            if index in keys:
+                eventsIndex+= self.localIndex[index]+ ', '
+                eventsSpan+= self.events[index]['trigger']+', '
+                #events.append((self.localIndex[index], self.events[index]['trigger']))
+                #return self.localIndex[index], self.events[key]['trigger']
+        eventsIndex= eventsIndex.strip(', ')
+        eventsSpan= eventsSpan.strip(', ')
+        return eventsIndex, eventsSpan
 
-    def detectCausalTriggers(self, lemmas, tokens):
+    def detectCausalTriggers(self, lemmas):
+        triggers=[]
+        tokens= self.sentence.split(' ')
         causal={'CauseEffect':['cause','impact', 'affect', 'drive', 'lead'], 'EffectCause':['because', 'due']}
         for index in range(len(lemmas)):
             lemma= lemmas[index]
             if lemma in causal['CauseEffect']:
-                self.triggers.append(tokens[index], "left")
+                triggers.append((tokens[index], "left"))
             elif lemma in causal['EffectCause']:
-                self.triggers.append(tokens[index], 'right')
+                triggers.append((tokens[index], 'right'))
+        return triggers
 
     def setBounds(self):
         bounds={}
-        boundVal=[0, len(self.sentence)]
+        boundVal = [-1, len(self.sentence) + 1]
         for trigger in self.triggers:
-            b=self.sentence.index(trigger)
+            b=self.sentence.index(trigger[0])###
+            while b in boundVal:
+                b= self.sentence.find(trigger[0], b+1)
             boundVal.append(b)
-            bounds[trigger]={'curr': b}
+
+            #bounds[trigger[0]]={'curr': b}
+            bounds[b] = {'curr': b, "trigger": trigger}
         boundVal.sort()
-        for trigger in self.triggers:
-            b= bounds[trigger]['curr']
-            bounds[trigger].update({'prev': boundVal[boundVal.index(b)-1], 'next':boundVal[boundVal.index(b)+1]})
+        for index in range(1, len(boundVal)-1):
+            b=boundVal[index]
+            bounds[b].update({'prev': boundVal[index-1], 'next': boundVal[index+1]})
+        # bounds={}
+        # boundVal=[-1, len(self.sentence)+1]
+        # for trigger in self.triggers:
+        #     b=self.sentence.index(trigger[0])
+        #     boundVal.append(b)
+        #     bounds[trigger[0]]={'curr': b}
+        # boundVal.sort()
+        # for trigger in self.triggers:
+        #     b= bounds[trigger[0]]['curr']
+        #     bounds[trigger[0]].update({'prev': boundVal[boundVal.index(b)-1], 'next':boundVal[boundVal.index(b)+1]})
         return bounds
 
-    def getCausalNodes(self, trigger, direction):
-        bound= self.bounds[trigger]
-        cause, effect= self.locateEvents2(bound, direction)
-        fCause= self.format(cause)
-        fEffect= self.format(effect)
-        return fCause, fEffect
+    def getCausalNodes(self):
+        causality=[]
+        for b in self.bounds.keys():
+        #for trigger, direction in self.triggers:
+            bound= self.bounds[b]
+            trigger, direction= bound['trigger']
+            cause, effect= self.locateEvents2(bound, direction) ##Left is default: cause, relation, effect
+            fCause = self.format(cause)
+            fEffect= self.format(effect)
+            causality.append({'trigger': trigger, 'cause': fCause, 'effect': fEffect})
+        return causality
 
     def distanceHeuristic(self, triggerRST, causalClause, effectClause):
         rIndex= self.sentence.index(triggerRST)
@@ -92,10 +121,10 @@ class RSTModel:
             index = self.sentence.index(event['trigger'])
             if index>bound['prev'] and index<bound['next']:
                 if index<bound['curr']:
-                    list1.append(k, index)
+                    list1.append(k)
                 elif index>bound['curr']:
-                    list2.append(k, index)
-        if direction=='right':
+                    list2.append(k)
+        if direction=='left':
             return list1, list2
         return list2, list1
 

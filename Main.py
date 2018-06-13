@@ -24,9 +24,12 @@ def writeOutput(files):
         numSentences = eventReader.dataSize()
         allEvents, allEntities = eventReader.getEvents_Entities()
         for index in range(numSentences):
-            sentEntities = data[index]['entities']
+            #sentEntities = data[index]['entities']
             relations = data[index]['CauseRelations']
             sentence = eventReader.getSentence(index)
+            ####
+            lemmas= eventReader.getSentenceLemmas(index)
+            ###
             entLocalIndex={}
             entities= allEntities[index]
             events= allEvents[index]
@@ -53,22 +56,22 @@ def writeOutput(files):
                 writer.writeRow('Events', eventInfo)
 
             # rst = RSTModel(events, eventLocalIndex, sentence, [])
-            rstTriggers=[]
-            for relation in relations:
-                trigger= relation['trigger']
-                if trigger not in rstTriggers:
-                    rstTriggers.append(trigger)
-            rst = RSTModel(events, eventLocalIndex, sentence, rstTriggers)
-            for trigger in rstTriggers:
-                    try:
-                        relIndex = writer.getIndex("Causal")
-                        cause, effect = rst.getCausalNodes(trigger)
-                        causalInfo = [str(file), 'R' + str(relIndex - 1), trigger, "CausalRelation",
-                                         cause[0], cause[1], effect[0], effect[1], sentence]
-                        writer.writeRow("Causal", causalInfo)
-                    except:
-                        print "Relation Not found"
 
+            # rstTriggers=[]
+            # for relation in relations:
+            #     trigger= relation['trigger']
+            #     if trigger not in rstTriggers:
+            #         rstTriggers.append(trigger)
+            # rst = RSTModel(events, eventLocalIndex, sentence, rstTriggers)
+            rst = RSTModel(events, eventLocalIndex, sentence, lemmas)
+            causalRel= rst.getCausalNodes()
+            for relation in causalRel:
+                relIndex = writer.getIndex("Causal")
+                cause= relation["cause"]
+                effect= relation["effect"]
+                causalInfo = [str(file), 'R' + str(relIndex - 1), relation["trigger"], "CausalRelation",
+                                         cause[0], cause[1], effect[0], effect[1], sentence]
+                writer.writeRow("Causal", causalInfo)
 
                 #####Model simpler way instead of heuristic. Just split the sentence in the bound between the rst trigger. Then model ALL events we
                 ###can find in the left/right side of the bound

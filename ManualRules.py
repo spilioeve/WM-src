@@ -83,6 +83,11 @@ class CandidateEvents:
     #     sentence, tokens, mapping, loc, time, depCurr = self.data[sentenceIndex]
     #     return tokens
 
+    def getSentenceLemmas(self, sentenceIndex):
+        data= self.stanfordLoader.getDataPerSentence(sentenceIndex)
+        lemmas= data['lemmas']
+        return lemmas
+
     def getEvents_Entities(self):
         allEvents=[]
         allEntities=[]
