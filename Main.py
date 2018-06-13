@@ -55,14 +55,9 @@ def writeOutput(files):
                              event['temporal'], agent, event['agent'][1], patient, event['patient'][1], sentence]
                 writer.writeRow('Events', eventInfo)
 
-            # rst = RSTModel(events, eventLocalIndex, sentence, [])
-
-            # rstTriggers=[]
-            # for relation in relations:
-            #     trigger= relation['trigger']
-            #     if trigger not in rstTriggers:
-            #         rstTriggers.append(trigger)
-            # rst = RSTModel(events, eventLocalIndex, sentence, rstTriggers)
+           ##Model RST currently based only on Events. Being able to bring Entities in front???
+                ###Or maybe include this portion as the merged Deep Learning Architecture?
+                ###Merged with Coreference & Temporal Seq???
             rst = RSTModel(events, eventLocalIndex, sentence, lemmas)
             causalRel= rst.getCausalNodes()
             for relation in causalRel:

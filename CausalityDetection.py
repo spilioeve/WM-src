@@ -14,12 +14,9 @@ class RSTModel:
         eventsIndex=""
         eventsSpan=""
         for index in self.localIndex.keys():
-            #span = self.localIndex[index]
             if index in keys:
                 eventsIndex+= self.localIndex[index]+ ', '
                 eventsSpan+= self.events[index]['trigger']+', '
-                #events.append((self.localIndex[index], self.events[index]['trigger']))
-                #return self.localIndex[index], self.events[key]['trigger']
         eventsIndex= eventsIndex.strip(', ')
         eventsSpan= eventsSpan.strip(', ')
         return eventsIndex, eventsSpan
@@ -44,29 +41,16 @@ class RSTModel:
             while b in boundVal:
                 b= self.sentence.find(trigger[0], b+1)
             boundVal.append(b)
-
-            #bounds[trigger[0]]={'curr': b}
             bounds[b] = {'curr': b, "trigger": trigger}
         boundVal.sort()
         for index in range(1, len(boundVal)-1):
             b=boundVal[index]
             bounds[b].update({'prev': boundVal[index-1], 'next': boundVal[index+1]})
-        # bounds={}
-        # boundVal=[-1, len(self.sentence)+1]
-        # for trigger in self.triggers:
-        #     b=self.sentence.index(trigger[0])
-        #     boundVal.append(b)
-        #     bounds[trigger[0]]={'curr': b}
-        # boundVal.sort()
-        # for trigger in self.triggers:
-        #     b= bounds[trigger[0]]['curr']
-        #     bounds[trigger[0]].update({'prev': boundVal[boundVal.index(b)-1], 'next':boundVal[boundVal.index(b)+1]})
         return bounds
 
     def getCausalNodes(self):
         causality=[]
         for b in self.bounds.keys():
-        #for trigger, direction in self.triggers:
             bound= self.bounds[b]
             trigger, direction= bound['trigger']
             cause, effect= self.locateEvents2(bound, direction) ##Left is default: cause, relation, effect
