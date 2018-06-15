@@ -2,21 +2,29 @@ import pdb
 
 class RSTModel:
 
-    def __init__(self, events, eventLocalIndex, sentence, lemmas):
+    def __init__(self, events, eventLocalIndex, entities, entityLocalIndex, sentence, lemmas):
         self.sentence= sentence
         self.triggers= self.detectCausalTriggers(lemmas)
         self.bounds= self.setBounds()
         self.events= events
         self.localIndex= eventLocalIndex
+        self.entities= entities
+        self.entityIndex= entityLocalIndex
         #self.events= self.format(events, eventLocalIndex)
 
-    def format(self, keys):
+    def format(self, keys, entities=False):
+        if entities:
+            localIndex= self.entityIndex
+            localEvents= self.entities
+        else:
+            localIndex = self.localIndex
+            localEvents = self.events
         eventsIndex=""
         eventsSpan=""
-        for index in self.localIndex.keys():
+        for index in localIndex.keys():
             if index in keys:
-                eventsIndex+= self.localIndex[index]+ ', '
-                eventsSpan+= self.events[index]['trigger']+', '
+                eventsIndex+= localIndex[index]+ ', '
+                eventsSpan+= localEvents[index]['trigger']+', '
         eventsIndex= eventsIndex.strip(', ')
         eventsSpan= eventsSpan.strip(', ')
         return eventsIndex, eventsSpan
@@ -24,9 +32,14 @@ class RSTModel:
     def detectCausalTriggers(self, lemmas):
         triggers=[]
         tokens= self.sentence.split(' ')
-        causal={'CauseEffect':['cause','impact', 'affect', 'drive', 'lead'], 'EffectCause':['because', 'due']}
+        causal={'CauseEffect':['impact', 'affect', 'drive', 'lead'], 'EffectCause':['because', 'due']}
         for index in range(len(lemmas)):
             lemma= lemmas[index]
+            if lemma== 'cause':
+                if lemmas[index+1]== 'by':
+                    triggers.append((tokens[index], "right"))
+                else:
+                    triggers.append((tokens[index], "left"))
             if lemma in causal['CauseEffect']:
                 triggers.append((tokens[index], "left"))
             elif lemma in causal['EffectCause']:
@@ -37,7 +50,7 @@ class RSTModel:
         bounds={}
         boundVal = [-1, len(self.sentence) + 1]
         for trigger in self.triggers:
-            b=self.sentence.index(trigger[0])###
+            b=self.sentence.index(trigger[0])
             while b in boundVal:
                 b= self.sentence.find(trigger[0], b+1)
             boundVal.append(b)
@@ -48,7 +61,8 @@ class RSTModel:
             bounds[b].update({'prev': boundVal[index-1], 'next': boundVal[index+1]})
         return bounds
 
-    def getCausalNodes(self):
+    def getCausalNodes(self, entityReplacement=False):
+        ##Use also Entities as potential nodes, in case that we cannot locate an Event as cause/effect
         causality=[]
         for b in self.bounds.keys():
             bound= self.bounds[b]
@@ -56,6 +70,13 @@ class RSTModel:
             cause, effect= self.locateEvents2(bound, direction) ##Left is default: cause, relation, effect
             fCause = self.format(cause)
             fEffect= self.format(effect)
+            if entityReplacement:
+                if len(fEffect[0])== 0:
+                    cause, effect = self.locateEvents2(bound, direction)
+                    fEffect = self.format(effect, True)
+                elif len(fCause[0])==0:
+                    cause, effect = self.locateEvents2(bound, direction)
+                    fCause = self.format(cause, True)
             causality.append({'trigger': trigger, 'cause': fCause, 'effect': fEffect})
         return causality
 
@@ -108,6 +129,21 @@ class RSTModel:
                     list1.append(k)
                 elif index>bound['curr']:
                     list2.append(k)
+        if len(list1)==0:
+            for k in self.entities.keys():
+                entity = self.entities[k]
+                index = self.sentence.index(entity['text'])
+                if index > bound['prev'] and index < bound['next']:
+                    if index < bound['curr']:
+                        list1.append(k)
+        if len(list2)==0:
+            for k in self.entities.keys():
+                entity = self.entities[k]
+                print entity
+                index = self.sentence.index(entity['text'])
+                if index > bound['prev'] and index < bound['next']:
+                    if index > bound['curr']:
+                        list2.append(k)
         if direction=='left':
             return list1, list2
         return list2, list1

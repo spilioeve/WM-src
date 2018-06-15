@@ -6,11 +6,10 @@ import os
 import string
 from openpyxl import Workbook
 
-project= 'South_Sudan_Famine'
 
 def writeOutput(files):
-    path = os.getcwd()
-    dir = os.path.dirname(path) + '/' + project
+    # path = os.getcwd()
+    # dir = os.path.dirname(path) + '/' + project
     writer= ExcelWriter(['Causal', 'Events', 'Entities'])
     causalHeaders= ["Source_File", "Relation Index", "Relation", "Relation_Type", "Cause Index", "Cause", "Effect Index", "Effect", "Sentence"]
     eventHeaders= ["Source_File", "Event Index", "Relation", "Event_Type", "Location", "Time", 'Agent Index', "Agent", 'Patient Index', "Patient", "Sentence"]
@@ -19,13 +18,13 @@ def writeOutput(files):
     writer.writeRow("Events", eventHeaders)
     writer.writeRow("Entities", entityHeaders)
     for file in files:
-        data = odinData(file)
-        eventReader = CandidateEvents(file, dir)
+        #data = odinData(file)
+        eventReader = CandidateEvents(file, project)
         numSentences = eventReader.dataSize()
         allEvents, allEntities = eventReader.getEvents_Entities()
         for index in range(numSentences):
             #sentEntities = data[index]['entities']
-            relations = data[index]['CauseRelations']
+            #relations = data[index]['CauseRelations']
             sentence = eventReader.getSentence(index)
             ####
             lemmas= eventReader.getSentenceLemmas(index)
@@ -33,15 +32,15 @@ def writeOutput(files):
             entLocalIndex={}
             entities= allEntities[index]
             events= allEvents[index]
-            print "Sentence"
-            print sentence
-            print events
-            print entities
+            # print "Sentence"
+            # print sentence
+            # print events
+            # print entities
             for span in entities.keys():
                 entity= entities[span]
                 entIndex= writer.getIndex('Entities')
                 entLocalIndex[span]= 'N' + str(entIndex - 1)
-                entInfo= [str(file), 'N' + str(entIndex - 1), string.lower(entity["trigger"]), '', string.lower(entity['qualifier']), sentence]
+                entInfo= [str(file), 'N' + str(entIndex - 1), string.lower(entity["trigger"]), entity["frame"], string.lower(entity['qualifier']), sentence]
                 writer.writeRow('Entities', entInfo)
 
             eventLocalIndex={}
@@ -58,8 +57,8 @@ def writeOutput(files):
            ##Model RST currently based only on Events. Being able to bring Entities in front???
                 ###Or maybe include this portion as the merged Deep Learning Architecture?
                 ###Merged with Coreference & Temporal Seq???
-            rst = RSTModel(events, eventLocalIndex, sentence, lemmas)
-            causalRel= rst.getCausalNodes()
+            rst = RSTModel(events, eventLocalIndex, entities, entLocalIndex, sentence, lemmas)
+            causalRel= rst.getCausalNodes(True)
             for relation in causalRel:
                 relIndex = writer.getIndex("Causal")
                 cause= relation["cause"]
@@ -85,7 +84,7 @@ def writeOutput(files):
             #         writer.writeRow("Causal", causalInfo)
             #     except:
             #         print "Relation Not found"
-    writer.saveExcelFile(dir, 'output/Para6' + 'v6.4.xlsx')
+    writer.saveExcelFile(project, 'output/'+ dataDir + '_v2.xlsx')
     # for file in files:
     #     data= odinData(file)
     #     eventReader= CandidateEvents(file, dir)
@@ -127,7 +126,15 @@ def odinData(file):
     print "Analyzing", str(file)
     return output
 
-file= ['Paragraphs_SSudan']
-files= ['FFP Fact Sheet_South Sudan_2018.01.17 BG', 'i8533en', 'FEWS NET South Sudan Famine Risk Alert_20170117 BG', 'FAOGIEWSSouthSudanCountryBriefSept2017 BG', '130035 excerpt BG', 'CLiMIS_FAO_UNICEF_WFP_SouthSudanIPC_29June_FINAL BG', 'FEWSNET South Sudan Outlook January 2018 BG', 'EA_Seasonal Monitor_2017_08_11 BG']
+#dataDir='MITRE_June18'
+dataDir='Hackathon'
+projectName= '/South_Sudan_Famine'
+path = os.getcwd()
+project = os.path.dirname(path) + projectName
+
+#file= ['Paragraphs_SSudan']
+file=['Hackathon_pars']
+#files= os.listdir(project+ '/data/'+dataDir)
+#files= ['FFP Fact Sheet_South Sudan_2018.01.17 BG', 'i8533en', 'FEWS NET South Sudan Famine Risk Alert_20170117 BG', 'FAOGIEWSSouthSudanCountryBriefSept2017 BG', '130035 excerpt BG', 'CLiMIS_FAO_UNICEF_WFP_SouthSudanIPC_29June_FINAL BG', 'FEWSNET South Sudan Outlook January 2018 BG', 'EA_Seasonal Monitor_2017_08_11 BG']
 
 writeOutput(file)

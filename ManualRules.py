@@ -5,6 +5,7 @@ from FrameNetRefine import FrameNetRefiner
 from OntologyMapping import Ontology
 from StanfordInfo import DataExtractor
 from nltk.stem.wordnet import WordNetLemmatizer
+import pdb
 
 
 
@@ -198,20 +199,18 @@ class CandidateEvents:
             span= (item['start'], item['end'])
             lemmaH = item['headLemma']
             booleanH, frameH = self.refiner.refineWord(sentence, lemmaH, 'n')
-            # print "entity" + lemmaH + '?'+frameH
             if len(item['eventuality'])>0:
-                entities[span]= {'trigger': item['token'], 'frame': frameH, 'qualifier': item['qualifier']}
+                entities[span]= {'text':item['text'], 'trigger': item['token'], 'frame': frameH, 'qualifier': item['qualifier']}
                 event = item['eventuality']
                 lemma= event['lemma']
                 boolean, frame = self.refiner.refineWord(sentence, lemma, 'v')
-                # print "Event" + lemma + '?'+frame
                 if boolean:
                     eventSpan= (event['start'], event['end'])
                     events[eventSpan]= {'trigger': event['token'], 'location': data['location'], 'temporal': data['temporal'], 'agent':(0, ""), 'patient': ([span], item['token']), 'frame': frame}
             elif booleanH:
-                events[span] = {'trigger': item['token'], 'frame': frameH, 'location': data['location'], 'temporal': data['temporal'], 'patient': (0, ""), 'agent':(0, "")}
+                events[span] = {'trigger': item['text'], 'frame': frameH, 'location': data['location'], 'temporal': data['temporal'], 'patient': (0, ""), 'agent':(0, "")}
             else:
-                entities[span] = {'trigger': item['token'], 'frame': frameH, 'qualifier': item['qualifier']}
+                entities[span] = {'text':item['text'],'trigger': item['token'], 'frame': frameH, 'qualifier': item['qualifier']}
         return events, entities
 
     def nominalEvents(self, sentence, candidateEvents):

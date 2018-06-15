@@ -80,16 +80,19 @@ class DataExtractor:
                 lemma= mapping[endIndex-1]['lemma']
                 nounP=""
                 qualifier= ""
+                text=""
                 eventuality={}
                 for item in mapping[startIndex:endIndex]:
+                    text+= item['token']+ ' '
                     if item['pos']== verbTags:
                         eventuality= {'token': item['token'], 'start': item['start'], 'end':item['end'], 'lemma': item['lemma']}
                     elif item['pos']== 'JJ' or item['pos']=='JJS':
                         qualifier= item['token']
                     else:
                         nounP+= item['token']+ ' '
-                nounP.strip(' ')
-                nPhrases.append({'start': start, 'end': end, 'token': nounP, 'headLemma': lemma, 'eventuality': eventuality, 'qualifier': qualifier})
+                nounP= nounP.strip(' ')
+                text=text.strip(' ')
+                nPhrases.append({'text': text, 'start': start, 'end': end, 'token': nounP, 'headLemma': lemma, 'eventuality': eventuality, 'qualifier': qualifier})
         return nPhrases
 
 
