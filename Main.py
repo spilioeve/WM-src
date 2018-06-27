@@ -5,7 +5,7 @@ from Utils import Quantifiers, ExcelWriter
 import os
 import string
 from openpyxl import Workbook
-
+import pdb
 
 def writeOutput(files):
     # path = os.getcwd()
@@ -19,23 +19,19 @@ def writeOutput(files):
     writer.writeRow("Entities", entityHeaders)
     for file in files:
         #data = odinData(file)
+        print "Analyzing File"
+        print file
         eventReader = CandidateEvents(file, project)
         numSentences = eventReader.dataSize()
-        allEvents, allEntities = eventReader.getEvents_Entities()
+        allEvents2, allEvents, allEntities = eventReader.getEvents_Entities()
         for index in range(numSentences):
             #sentEntities = data[index]['entities']
             #relations = data[index]['CauseRelations']
             sentence = eventReader.getSentence(index)
-            ####
             lemmas= eventReader.getSentenceLemmas(index)
-            ###
             entLocalIndex={}
             entities= allEntities[index]
             events= allEvents[index]
-            # print "Sentence"
-            # print sentence
-            # print events
-            # print entities
             for span in entities.keys():
                 entity= entities[span]
                 entIndex= writer.getIndex('Entities')
@@ -53,12 +49,11 @@ def writeOutput(files):
                 eventInfo = [str(file), 'E' + str(evIndex - 1), event["trigger"], event["frame"], event['location'],
                              event['temporal'], agent, event['agent'][1], patient, event['patient'][1], sentence]
                 writer.writeRow('Events', eventInfo)
-
            ##Model RST currently based only on Events. Being able to bring Entities in front???
                 ###Or maybe include this portion as the merged Deep Learning Architecture?
                 ###Merged with Coreference & Temporal Seq???
             rst = RSTModel(events, eventLocalIndex, entities, entLocalIndex, sentence, lemmas)
-            causalRel= rst.getCausalNodes(True)
+            causalRel= rst.getCausalNodes()### OR TRUE
             for relation in causalRel:
                 relIndex = writer.getIndex("Causal")
                 cause= relation["cause"]
@@ -67,9 +62,15 @@ def writeOutput(files):
                                          cause[0], cause[1], effect[0], effect[1], sentence]
                 writer.writeRow("Causal", causalInfo)
 
-                #####Model simpler way instead of heuristic. Just split the sentence in the bound between the rst trigger. Then model ALL events we
-                ###can find in the left/right side of the bound
-                ###Additionally, if no event is found, can we just replace it by an entity and bring it "in front" as an Event???
+            # for relation in allEvents2:
+            #     relIndex = writer.getIndex("Causal")
+            #     #cause, effect = rst.locateEvents2(bound, 'left')
+            #
+            #     cause = relation["cause"]
+            #     effect = relation["effect"]
+            #     causalInfo = [str(file), 'R' + str(relIndex - 1), relation["trigger"], "IncreaseRelation",
+            #                   cause[0], cause[1], effect[0], effect[1], sentence]
+            #     writer.writeRow("Causal", causalInfo)
 
             # for relation in relations:
             #     print "relation"
@@ -84,7 +85,7 @@ def writeOutput(files):
             #         writer.writeRow("Causal", causalInfo)
             #     except:
             #         print "Relation Not found"
-    writer.saveExcelFile(project, 'output/'+ dataDir + '_v2.xlsx')
+    writer.saveExcelFile(project, 'output/'+ dataDir + '.xlsx')
     # for file in files:
     #     data= odinData(file)
     #     eventReader= CandidateEvents(file, dir)
@@ -126,15 +127,17 @@ def odinData(file):
     print "Analyzing", str(file)
     return output
 
-#dataDir='MITRE_June18'
-dataDir='Hackathon'
+# dataDir='MITRE_June18'
+dataDir='Para6v7.1'
 projectName= '/South_Sudan_Famine'
 path = os.getcwd()
 project = os.path.dirname(path) + projectName
 
-#file= ['Paragraphs_SSudan']
-file=['Hackathon_pars']
-#files= os.listdir(project+ '/data/'+dataDir)
-#files= ['FFP Fact Sheet_South Sudan_2018.01.17 BG', 'i8533en', 'FEWS NET South Sudan Famine Risk Alert_20170117 BG', 'FAOGIEWSSouthSudanCountryBriefSept2017 BG', '130035 excerpt BG', 'CLiMIS_FAO_UNICEF_WFP_SouthSudanIPC_29June_FINAL BG', 'FEWSNET South Sudan Outlook January 2018 BG', 'EA_Seasonal Monitor_2017_08_11 BG']
+files= ['Paragraphs_SSudan']
 
-writeOutput(file)
+# files= os.listdir(project+ '/data/'+dataDir)
+# ##files= ['FFP Fact Sheet_South Sudan_2018.01.17 BG', 'i8533en', 'FEWS NET South Sudan Famine Risk Alert_20170117 BG', 'FAOGIEWSSouthSudanCountryBriefSept2017 BG', '130035 excerpt BG', 'CLiMIS_FAO_UNICEF_WFP_SouthSudanIPC_29June_FINAL BG', 'FEWSNET South Sudan Outlook January 2018 BG', 'EA_Seasonal Monitor_2017_08_11 BG']
+# if '.DS_Store' in files:
+#     files= files[:files.index('.DS_Store')]+ files[files.index('.DS_Store')+1:]
+
+writeOutput(files)

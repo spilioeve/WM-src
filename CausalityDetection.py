@@ -29,10 +29,19 @@ class RSTModel:
         eventsSpan= eventsSpan.strip(', ')
         return eventsIndex, eventsSpan
 
+##Outcome, result
+###Correlation: relate to, influence, correlate
+##Prevent, limit, worsen, restrict, constrain
+## Increase/Decrease
+
+## Grounding via word-to-vec or glove to the Ontology
+
     def detectCausalTriggers(self, lemmas):
         triggers=[]
         tokens= self.sentence.split(' ')
-        causal={'CauseEffect':['impact', 'affect', 'drive', 'lead'], 'EffectCause':['because', 'due']}
+        causal={'CauseEffect':['impact', 'affect', 'drive', 'lead', 'result'], 'EffectCause':['because', 'due']}
+        preventive= {'CauseEffect':['prevent', 'limit', 'worsen', 'restrict', 'constrain']}
+        correlation={'CauseEffect':['relate', 'influence', 'correlate']}
         for index in range(len(lemmas)):
             lemma= lemmas[index]
             if lemma== 'cause':
@@ -45,6 +54,37 @@ class RSTModel:
             elif lemma in causal['EffectCause']:
                 triggers.append((tokens[index], 'right'))
         return triggers
+
+
+    #### Implement to include second order events
+    ### Those are taken and ranked by the Extractor
+    ### Here it is left only a very simple alignment (similar to CausalNodes) to cause/effect (income outcome nodes)
+    ###To-do to fix these issues of mapping
+
+    # def set2OrderEvents(self, eventCandidates):
+    #     triggers=[]
+    #     for k in eventCandidates.keys():
+    #         event= eventCandidates[k]
+    #         triggers.append((event['trigger'], 'left'))
+            
+
+
+    # def detectTrendTriggers(self, lemmas):
+    #     triggers=[]
+    #     tokens= self.sentence.split(' ')
+    #     causal={'CauseEffect':['impact', 'affect', 'drive', 'lead'], 'EffectCause':['because', 'due']}
+    #     for index in range(len(lemmas)):
+    #         lemma= lemmas[index]
+    #         if lemma== 'cause':
+    #             if lemmas[index+1]== 'by':
+    #                 triggers.append((tokens[index], "right"))
+    #             else:
+    #                 triggers.append((tokens[index], "left"))
+    #         if lemma in causal['CauseEffect']:
+    #             triggers.append((tokens[index], "left"))
+    #         elif lemma in causal['EffectCause']:
+    #             triggers.append((tokens[index], 'right'))
+    #     return triggers
 
     def setBounds(self):
         bounds={}
@@ -60,6 +100,12 @@ class RSTModel:
             b=boundVal[index]
             bounds[b].update({'prev': boundVal[index-1], 'next': boundVal[index+1]})
         return bounds
+
+    def insertBound(self, newTriggers):
+        bounds= self.bounds
+        boundVal= bounds.keys()
+        boundVal+= [-1, len(self.sentence) + 1]
+
 
     def getCausalNodes(self, entityReplacement=False):
         ##Use also Entities as potential nodes, in case that we cannot locate an Event as cause/effect
@@ -114,7 +160,6 @@ class RSTModel:
                 cause, j = self.locateEvents(i, 'left')
         fEffect= self.format(effect)
         fCause= self.format(cause)
-        print "Cause, effect"
         return fCause, fEffect
 
     def locateEvents2(self, bound, direction):
@@ -139,7 +184,6 @@ class RSTModel:
         if len(list2)==0:
             for k in self.entities.keys():
                 entity = self.entities[k]
-                print entity
                 index = self.sentence.index(entity['text'])
                 if index > bound['prev'] and index < bound['next']:
                     if index > bound['curr']:

@@ -32,7 +32,7 @@ class CandidateEvents:
             self.refiner = Ontology(dir)
         self.lmtzr = WordNetLemmatizer()
 
-    def getVerbEvents(self, sentenceIndex, events, entities, refine=True):
+    def getVerbEvents(self, sentenceIndex, events2, events, entities, refine=True):
         data= self.stanfordLoader.getDataPerSentence(sentenceIndex)
         #sentence, tokens, mapping, loc, time, depCurr = self.data[sentenceIndex]
         pos= data["pos"]
@@ -40,10 +40,20 @@ class CandidateEvents:
         tokens= data["tokens"]
         sentence= data["sentence"]
         spans = data['spans']
-        sentenceEvents = events
+        sentenceEvents = {}
+        sentenceEvents2= {}
+        # sentenceEvents = events
+        # sentenceEvents2= events2
         for index in range(len(lemmas)):
         #for item in lemmas:
-            if pos[index] in verbTags and lemmas[index] not in aux:
+            span = spans[index]
+            if span in events:
+                sentenceEvents[span] = events[span]
+                sentenceEvents[span].update({"index": index})
+            elif span in events2:
+                sentenceEvents2[span] = events2[span]
+                sentenceEvents2[span].update({"index": index})
+            elif pos[index] in verbTags and lemmas[index] not in aux:
             #if item["pos"] in verbTags and (item["lemma"] not in aux):
                 flag= True
                 frame= ""
@@ -54,19 +64,27 @@ class CandidateEvents:
                 #     else:
                 #         flag= False
                 if refine:
-                    flag, frame= self.refiner.refineWord(sentence, lemmas[index], pos[index])
+                    flag, frame, category= self.refiner.refineWord(sentence, lemmas[index], pos[index])
                 if flag:
                     token= tokens[index]
                     ####srlOut, nomBool= self.recognizeNomEventuality(token, data['NPs'])
-                    span= spans[index]
-                    if span in events:
-                        pass
+                    if category=='event2':
+                        sentenceEvents2[span] = {"trigger": token["token"], "lemma": lemmas[index], "index": index,
+                                                "frame": frame, "temporal": data["temporal"],
+                                                "location": data["location"]}
                     else:
                         srlOut= self.getDependencies(sentenceIndex, index+1, entities)
                         sentenceEvents[span] ={"trigger": token["token"], "lemma": lemmas[index], "index": index,
                                   "frame": frame, "temporal": data["temporal"], "location": data["location"]}
                         sentenceEvents[span].update(srlOut)
-        return sentenceEvents
+        for span in sentenceEvents2.keys():
+            #pdb.set_trace()
+            index=sentenceEvents2[span]['index']
+            srlOut = self.getDependencies(sentenceIndex, index + 1, sentenceEvents)
+            sentenceEvents2[span].update(srlOut)
+        print sentenceEvents2
+
+        return sentenceEvents2, sentenceEvents
 
     def getLocAndTime(self, sentenceIndex):
         sentence, tokens, mapping, loc, time, depCurr= self.data[sentenceIndex]
@@ -80,37 +98,22 @@ class CandidateEvents:
         sentence= data['sentence']
         return sentence
 
-    # def getTokens(self, sentenceIndex):
-    #     sentence, tokens, mapping, loc, time, depCurr = self.data[sentenceIndex]
-    #     return tokens
-
     def getSentenceLemmas(self, sentenceIndex):
         data= self.stanfordLoader.getDataPerSentence(sentenceIndex)
         lemmas= data['lemmas']
         return lemmas
 
     def getEvents_Entities(self):
+        allEvents2=[]
         allEvents=[]
         allEntities=[]
         for index in range(self.stanfordLoader.getDataSize()):
-            events, entities = self.classifyNominals(index)
-            events= self.getVerbEvents(index, events, entities)
-            #sentenceEvents= verbalEvents+ nomEvents
+            events2, events, entities = self.classifyNominals(index)
+            events2, events= self.getVerbEvents(index, events2, events, entities)
+            allEvents2.append(events2)
             allEvents.append(events)
             allEntities.append(entities)
-        return allEvents, allEntities
-
-    # def getEventsWithDependencies(self, sentenceIndex, entities):
-    #     events= self.getVerbEvents(sentenceIndex)
-    #     #sentence, tokens, mapping, loc, time, depCurr = self.data[sentenceIndex]
-    #     eventsWithDeps=[]
-    #     if len(events)==0: return []
-    #     for event in events:
-    #         index= event["index"]
-    #         dependencies= self.getDependencies(sentenceIndex, index, entities)
-    #         event.update(dependencies)
-    #         eventsWithDeps.append(event)
-    #     return eventsWithDeps
+        return allEvents2, allEvents, allEntities
 
     def getDependencies(self, sentenceIndex, index, entities):
         deps= self.stanfordLoader.getDependencies(sentenceIndex)
@@ -192,26 +195,35 @@ class CandidateEvents:
     def classifyNominals(self, sentenceIndex):
         events = {}
         entities={}
+        events2={}
         data = self.stanfordLoader.getDataPerSentence(sentenceIndex)
         sentence = data["sentence"]
         nominals = data["NPs"]
         for item in nominals:
             span= (item['start'], item['end'])
             lemmaH = item['headLemma']
-            booleanH, frameH = self.refiner.refineWord(sentence, lemmaH, 'n')
+            booleanH, frameH, category = self.refiner.refineWord(sentence, lemmaH, 'n')
             if len(item['eventuality'])>0:
                 entities[span]= {'text':item['text'], 'trigger': item['token'], 'frame': frameH, 'qualifier': item['qualifier']}
                 event = item['eventuality']
                 lemma= event['lemma']
-                boolean, frame = self.refiner.refineWord(sentence, lemma, 'v')
+                boolean, frame, category = self.refiner.refineWord(sentence, lemma, 'v')
                 if boolean:
                     eventSpan= (event['start'], event['end'])
-                    events[eventSpan]= {'trigger': event['token'], 'location': data['location'], 'temporal': data['temporal'], 'agent':(0, ""), 'patient': ([span], item['token']), 'frame': frame}
+                    if category== 'event2':
+                        events2[eventSpan]= {'trigger': event['token'], 'location': data['location'], 'temporal': data['temporal'], 'frame': frame}
+                    else:
+                        events[eventSpan]= {'trigger': event['token'], 'location': data['location'], 'temporal': data['temporal'], 'agent':(0, ""), 'patient': ([span], item['token']), 'frame': frame}
+
             elif booleanH:
-                events[span] = {'trigger': item['text'], 'frame': frameH, 'location': data['location'], 'temporal': data['temporal'], 'patient': (0, ""), 'agent':(0, "")}
+                if category== 'event2':
+                    events2[span] = {'trigger': item['text'], 'frame': frameH, 'location': data['location'],
+                                    'temporal': data['temporal']}
+                else:
+                    events[span] = {'trigger': item['text'], 'frame': frameH, 'location': data['location'], 'temporal': data['temporal'], 'patient': (0, ""), 'agent':(0, "")}
             else:
                 entities[span] = {'text':item['text'],'trigger': item['token'], 'frame': frameH, 'qualifier': item['qualifier']}
-        return events, entities
+        return events2, events, entities
 
     def nominalEvents(self, sentence, candidateEvents):
         events=[]
