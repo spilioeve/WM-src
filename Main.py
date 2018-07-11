@@ -128,6 +128,7 @@ def odinData(file):
     print "Analyzing", str(file)
     return output
 
+
 #dataDir='MITRE_June18'
 dataDir='Para6v9.1'
 projectName= '/South_Sudan_Famine'
@@ -135,10 +136,12 @@ path = os.getcwd()
 project = os.path.dirname(path) + projectName
 
 files= ['Paragraphs_SSudan']
-
 #files= os.listdir(project+ '/data/'+dataDir)
 ##files= ['FFP Fact Sheet_South Sudan_2018.01.17 BG', 'i8533en', 'FEWS NET South Sudan Famine Risk Alert_20170117 BG', 'FAOGIEWSSouthSudanCountryBriefSept2017 BG', '130035 excerpt BG', 'CLiMIS_FAO_UNICEF_WFP_SouthSudanIPC_29June_FINAL BG', 'FEWSNET South Sudan Outlook January 2018 BG', 'EA_Seasonal Monitor_2017_08_11 BG']
 if '.DS_Store' in files:
     files= files[:files.index('.DS_Store')]+ files[files.index('.DS_Store')+1:]
-
+# files= os.listdir(project+ '/data/'+dataDir)
+# ##files= ['FFP Fact Sheet_South Sudan_2018.01.17 BG', 'i8533en', 'FEWS NET South Sudan Famine Risk Alert_20170117 BG', 'FAOGIEWSSouthSudanCountryBriefSept2017 BG', '130035 excerpt BG', 'CLiMIS_FAO_UNICEF_WFP_SouthSudanIPC_29June_FINAL BG', 'FEWSNET South Sudan Outlook January 2018 BG', 'EA_Seasonal Monitor_2017_08_11 BG']
+# if '.DS_Store' in files:
+#     files= files[:files.index('.DS_Store')]+ files[files.index('.DS_Store')+1:]
 writeOutput(files)

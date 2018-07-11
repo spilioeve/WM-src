@@ -31,7 +31,7 @@ class RSTModel:
 
 ##Outcome, result
 ###Correlation: relate to, influence, correlate
-##Prevent, limit
+##Prevent, limit, worsen, restrict, constrain
 ## Increase/Decrease
 
 ## Grounding via word-to-vec or glove to the Ontology
@@ -40,6 +40,7 @@ class RSTModel:
         triggers=[]
         tokens= self.sentence.split(' ')
         causal={'CauseEffect':['impact', 'affect', 'drive', 'lead', 'result'], 'EffectCause':['because', 'due']}
+
         preventive = ['prevent', 'limit', 'restrict', 'constrain', 'block', 'bind', 'regulate']
         correlation = ['relate', 'influence', 'correlate']
         for index in range(len(lemmas)):
@@ -105,10 +106,10 @@ class RSTModel:
             bounds[b].update({'prev': boundVal[index-1], 'next': boundVal[index+1]})
         return bounds
 
-    def insertBound(self, newTriggers):
-        bounds= self.bounds
-        boundVal= bounds.keys()
-        boundVal+= [-1, len(self.sentence) + 1]
+    # def insertBound(self, newTriggers):
+    #     bounds= self.bounds
+    #     boundVal= bounds.keys()
+    #     boundVal+= [-1, len(self.sentence) + 1]
 
 
     def getCausalNodes(self, entityReplacement=False):
