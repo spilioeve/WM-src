@@ -76,7 +76,7 @@ class DataExtractor:
                 #nPhrases.append(phrase)
                 startIndex, endIndex= self.findTerm(mapping, phrase.split(' '), 'token')
                 start= mapping[startIndex]['start']
-                end= mapping[endIndex]['end']
+                end= mapping[endIndex-1]['end'] ##Changed to endIndex-1 from endIndex???
                 lemma= mapping[endIndex-1]['lemma']
                 nounP=""
                 qualifier= ""
@@ -110,16 +110,16 @@ class DataExtractor:
         return 0, 0
 
 
-def proc(parse):
-    nPhrases=[]
-    for line in parse.split('\n'):
-        s= line.split('(')
-        head= str(s[1]).strip(' ')
-        if head== 'NP' and ')' in line:
-            phrase=""
-            for item in s[2:]:
-                w = item.strip(') ').split(' ')[1]
-                phrase+= w+' '
-            phrase=phrase.strip(' ')
-            nPhrases.append(phrase)
-    return nPhrases
+# def proc(parse):
+#     nPhrases=[]
+#     for line in parse.split('\n'):
+#         s= line.split('(')
+#         head= str(s[1]).strip(' ')
+#         if head== 'NP' and ')' in line:
+#             phrase=""
+#             for item in s[2:]:
+#                 w = item.strip(') ').split(' ')[1]
+#                 phrase+= w+' '
+#             phrase=phrase.strip(' ')
+#             nPhrases.append(phrase)
+#     return nPhrases

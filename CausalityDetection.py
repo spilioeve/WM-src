@@ -29,22 +29,66 @@ class RSTModel:
         eventsSpan= eventsSpan.strip(', ')
         return eventsIndex, eventsSpan
 
+##Outcome, result
+###Correlation: relate to, influence, correlate
+##Prevent, limit
+## Increase/Decrease
+
+## Grounding via word-to-vec or glove to the Ontology
+
     def detectCausalTriggers(self, lemmas):
         triggers=[]
         tokens= self.sentence.split(' ')
-        causal={'CauseEffect':['impact', 'affect', 'drive', 'lead'], 'EffectCause':['because', 'due']}
+        causal={'CauseEffect':['impact', 'affect', 'drive', 'lead', 'result'], 'EffectCause':['because', 'due']}
+        preventive = ['prevent', 'limit', 'restrict', 'constrain', 'block', 'bind', 'regulate']
+        correlation = ['relate', 'influence', 'correlate']
         for index in range(len(lemmas)):
             lemma= lemmas[index]
             if lemma== 'cause':
                 if lemmas[index+1]== 'by':
-                    triggers.append((tokens[index], "right"))
+                    triggers.append((tokens[index], "right", 'CausalRelation'))
                 else:
-                    triggers.append((tokens[index], "left"))
+                    triggers.append((tokens[index], "left", 'CausalRelation'))
             if lemma in causal['CauseEffect']:
-                triggers.append((tokens[index], "left"))
+                triggers.append((tokens[index], "left", 'CausalRelation'))
             elif lemma in causal['EffectCause']:
-                triggers.append((tokens[index], 'right'))
+                triggers.append((tokens[index], 'right', 'CausalRelation'))
+            # elif lemma in preventive:
+            #     triggers.append((tokens[index], "left", 'PreventRelation'))
+            # elif lemma in correlation:
+            #     triggers.append((tokens[index], "left", 'CorrelateRelation'))
         return triggers
+
+
+    #### Implement to include second order events
+    ### Those are taken and ranked by the Extractor
+    ### Here it is left only a very simple alignment (similar to CausalNodes) to cause/effect (income outcome nodes)
+    ###To-do to fix these issues of mapping
+
+    # def set2OrderEvents(self, eventCandidates):
+    #     triggers=[]
+    #     for k in eventCandidates.keys():
+    #         event= eventCandidates[k]
+    #         triggers.append((event['trigger'], 'left'))
+            
+
+
+    # def detectTrendTriggers(self, lemmas):
+    #     triggers=[]
+    #     tokens= self.sentence.split(' ')
+    #     causal={'CauseEffect':['impact', 'affect', 'drive', 'lead'], 'EffectCause':['because', 'due']}
+    #     for index in range(len(lemmas)):
+    #         lemma= lemmas[index]
+    #         if lemma== 'cause':
+    #             if lemmas[index+1]== 'by':
+    #                 triggers.append((tokens[index], "right"))
+    #             else:
+    #                 triggers.append((tokens[index], "left"))
+    #         if lemma in causal['CauseEffect']:
+    #             triggers.append((tokens[index], "left"))
+    #         elif lemma in causal['EffectCause']:
+    #             triggers.append((tokens[index], 'right'))
+    #     return triggers
 
     def setBounds(self):
         bounds={}
@@ -61,12 +105,18 @@ class RSTModel:
             bounds[b].update({'prev': boundVal[index-1], 'next': boundVal[index+1]})
         return bounds
 
+    def insertBound(self, newTriggers):
+        bounds= self.bounds
+        boundVal= bounds.keys()
+        boundVal+= [-1, len(self.sentence) + 1]
+
+
     def getCausalNodes(self, entityReplacement=False):
         ##Use also Entities as potential nodes, in case that we cannot locate an Event as cause/effect
         causality=[]
         for b in self.bounds.keys():
             bound= self.bounds[b]
-            trigger, direction= bound['trigger']
+            trigger, direction, relType= bound['trigger']
             cause, effect= self.locateEvents2(bound, direction) ##Left is default: cause, relation, effect
             fCause = self.format(cause)
             fEffect= self.format(effect)
@@ -77,7 +127,7 @@ class RSTModel:
                 elif len(fCause[0])==0:
                     cause, effect = self.locateEvents2(bound, direction)
                     fCause = self.format(cause, True)
-            causality.append({'trigger': trigger, 'cause': fCause, 'effect': fEffect})
+            causality.append({'trigger': trigger, 'cause': fCause, 'effect': fEffect, 'type': relType})
         return causality
 
     def distanceHeuristic(self, triggerRST, causalClause, effectClause):
@@ -114,7 +164,6 @@ class RSTModel:
                 cause, j = self.locateEvents(i, 'left')
         fEffect= self.format(effect)
         fCause= self.format(cause)
-        print "Cause, effect"
         return fCause, fEffect
 
     def locateEvents2(self, bound, direction):
@@ -139,7 +188,6 @@ class RSTModel:
         if len(list2)==0:
             for k in self.entities.keys():
                 entity = self.entities[k]
-                print entity
                 index = self.sentence.index(entity['text'])
                 if index > bound['prev'] and index < bound['next']:
                     if index > bound['curr']:
