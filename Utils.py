@@ -179,6 +179,8 @@ class ExcelWriter:
         ws = self.wb.active
         self.sheets=[ws]
         self.currIndex=[1]
+        ss_sheet = self.wb.get_sheet_by_name('Sheet')
+        ss_sheet.title = list_sheets[0]
         s= 1
         while len(list_sheets)-s>0:
             name= list_sheets[s]

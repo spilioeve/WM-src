@@ -38,7 +38,6 @@ def writeOutput(files):
                 entLocalIndex[span]= 'N' + str(entIndex - 1)
                 entInfo= [str(file), 'N' + str(entIndex - 1), string.lower(entity["trigger"]), entity["frame"], string.lower(entity['qualifier']), sentence]
                 writer.writeRow('Entities', entInfo)
-
             eventLocalIndex={}
             for span in events.keys():
                 event= events[span]
@@ -130,7 +129,7 @@ def odinData(file):
 
 
 #dataDir='MITRE_June18'
-dataDir='Para6v9.1'
+dataDir='Para6v10'
 projectName= '/South_Sudan_Famine'
 path = os.getcwd()
 project = os.path.dirname(path) + projectName

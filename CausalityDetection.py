@@ -39,10 +39,9 @@ class RSTModel:
     def detectCausalTriggers(self, lemmas):
         triggers=[]
         tokens= self.sentence.split(' ')
-        causal={'CauseEffect':['impact', 'affect', 'drive', 'lead', 'result'], 'EffectCause':['because', 'due']}
-
-        preventive = ['prevent', 'limit', 'restrict', 'constrain', 'block', 'bind', 'regulate']
-        correlation = ['relate', 'influence', 'correlate']
+        causal={'CauseEffect':['impact', 'affect', 'drive', 'lead', 'result'], 'EffectCause':['because', 'due']} #Hard Triggers
+        preventive = ['prevent', 'limit', 'restrict', 'constrain', 'block', 'bind', 'regulate'] ## Soft triggers
+        correlation = ['relate', 'influence', 'correlate'] #Hard or soft? Think about it
         for index in range(len(lemmas)):
             lemma= lemmas[index]
             if lemma== 'cause':
@@ -54,12 +53,11 @@ class RSTModel:
                 triggers.append((tokens[index], "left", 'CausalRelation'))
             elif lemma in causal['EffectCause']:
                 triggers.append((tokens[index], 'right', 'CausalRelation'))
-            # elif lemma in preventive:
-            #     triggers.append((tokens[index], "left", 'PreventRelation'))
-            # elif lemma in correlation:
-            #     triggers.append((tokens[index], "left", 'CorrelateRelation'))
+            elif lemma in preventive:
+                triggers.append((tokens[index], "left", 'PreventRelation'))
+            elif lemma in correlation:
+                triggers.append((tokens[index], "left", 'CorrelateRelation'))
         return triggers
-
 
     #### Implement to include second order events
     ### Those are taken and ranked by the Extractor
@@ -112,6 +110,8 @@ class RSTModel:
     #     boundVal+= [-1, len(self.sentence) + 1]
 
 
+    ##If Effect/Cause are empty, return no relation
+    ##Fix model by searching more Events from previous module, given that there is a hard Relations (Aka hard Causal Trigger)
     def getCausalNodes(self, entityReplacement=False):
         ##Use also Entities as potential nodes, in case that we cannot locate an Event as cause/effect
         causality=[]
@@ -128,7 +128,8 @@ class RSTModel:
                 elif len(fCause[0])==0:
                     cause, effect = self.locateEvents2(bound, direction)
                     fCause = self.format(cause, True)
-            causality.append({'trigger': trigger, 'cause': fCause, 'effect': fEffect, 'type': relType})
+            if fCause[0]!= '' and fEffect[0]!= '':
+                causality.append({'trigger': trigger, 'cause': fCause, 'effect': fEffect, 'type': relType})
         return causality
 
     def distanceHeuristic(self, triggerRST, causalClause, effectClause):
@@ -200,7 +201,6 @@ class RSTModel:
 
     def locateEvents(self, bound, direction):
         triggerIndex= self.triggers.index(bound)
-
         keys= self.events.keys()
         if direction == 'right':
             keys.sort()
