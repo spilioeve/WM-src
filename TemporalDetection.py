@@ -29,4 +29,3 @@ class TemporalModel:
             bounds[b].update({'prev': boundVal[index-1], 'next': boundVal[index+1]})
         return bounds
 
-        

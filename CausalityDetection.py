@@ -1,10 +1,13 @@
 import pdb
+verbTags=["VB", "VBP", "VBD", "VBZ", "VBN", "VBG"]
 
 class RSTModel:
 
-    def __init__(self, events, eventLocalIndex, entities, entityLocalIndex, sentence, lemmas):
+    def __init__(self, events, eventLocalIndex, entities, entityLocalIndex, sentence, lemmas, pos):
         self.sentence= sentence
-        self.triggers= self.detectCausalTriggers(lemmas)
+        # self.lemmas= lemmas
+        # self.pos= pos
+        self.triggers= self.detectCausalTriggers(lemmas, pos)
         self.bounds= self.setBounds()
         self.events= events
         self.localIndex= eventLocalIndex
@@ -36,10 +39,12 @@ class RSTModel:
 
 ## Grounding via word-to-vec or glove to the Ontology
 
-    def detectCausalTriggers(self, lemmas):
+    def detectCausalTriggers(self, lemmas, pos):
         triggers=[]
         tokens= self.sentence.split(' ')
         causal={'CauseEffect':['impact', 'affect', 'drive', 'lead', 'result'], 'EffectCause':['because', 'due']} #Hard Triggers
+        ##Add constraint that preventive triggers must also be verbs???
+        #WHat about correlation triggers?
         preventive = ['prevent', 'limit', 'restrict', 'constrain', 'block', 'bind', 'regulate'] ## Soft triggers
         correlation = ['relate', 'influence', 'correlate'] #Hard or soft? Think about it
         for index in range(len(lemmas)):
@@ -54,7 +59,8 @@ class RSTModel:
             elif lemma in causal['EffectCause']:
                 triggers.append((tokens[index], 'right', 'CausalRelation'))
             elif lemma in preventive:
-                triggers.append((tokens[index], "left", 'PreventRelation'))
+                if pos[index] in verbTags:
+                    triggers.append((tokens[index], "left", 'PreventRelation'))
             elif lemma in correlation:
                 triggers.append((tokens[index], "left", 'CorrelateRelation'))
         return triggers

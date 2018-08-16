@@ -103,6 +103,12 @@ class CandidateEvents:
         lemmas= data['lemmas']
         return lemmas
 
+
+    def getSentencePOSTags(self, sentenceIndex):
+        data = self.stanfordLoader.getDataPerSentence(sentenceIndex)
+        pos = data['pos']
+        return pos
+
     def getEvents_Entities(self):
         allEvents2=[]
         allEvents=[]
