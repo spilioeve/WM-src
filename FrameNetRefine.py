@@ -4,6 +4,7 @@ from nltk.wsd import lesk
 from nltk.stem import WordNetLemmatizer
 import os
 import string
+import ast
 
 class FrameNetRefiner:
     def __init__(self):
@@ -15,6 +16,7 @@ class FrameNetRefiner:
         self.adjTags= ['JJ', 'JJR', 'JJS']
         self.lmtzer = WordNetLemmatizer()
         self.frames= self.getTaxonomy()
+        self.frameLUs= self.getFrameNetLUs()
         self.wordToFrame= self.getWordFrameNet()
         self.Causal=['Causation']
 
@@ -28,6 +30,14 @@ class FrameNetRefiner:
             fr= line.split('\t')[0]
             frames.append(fr)
         return frames
+
+    def getFrameNetLUs(self):
+        f = open(self.dir+ '/FrameNetLUs.txt')
+        text = f.read()
+        data = ast.literal_eval(text)
+        f.close()
+        return data
+
 
     def getWordFrameNet(self):
         f = open(self.dir+'/WordFrameNet.txt')
@@ -74,34 +84,43 @@ class FrameNetRefiner:
 
     def getFrames(self, word, pos):
         #Search within the Taxonomy to find LU
-
         posTag= self.getWnPos(pos)
         term= word+'.'+posTag
-        lus= fn.lus()
         frames=[]
-        for lu in lus:
-            name= lu.name
-            if name == term:
-                frames.append(lu.frame)
-        return frames
+        if term not in self.frameLUs:
+            return frames
+        return self.frameLUs[term]
+        # lus= fn.lus()
+        # frames=[]
+        # for lu in lus:
+        #     name= lu.name
+        #     if name == term:
+        #         frames.append(lu.frame)
+        #return frames
 
     #This is to refine Events
-    def refineWord(self, sentence, word, pos, wordNet= False):
-        if wordNet:
-            frames= self.getWordFrames(sentence, word, pos)
-            for frame in frames:
-                if frame in self.frames:
-                    return True, frame
-        else:
-            frames= self.getFrames(word, pos)
-            for frame in frames:
-                if frame.name in self.frames and (frame.name not in self.Causal):
-                    return True, frame.name
-        return False, ""
+    # def refineWord(self, sentence, word, pos, wordNet= False):
+    #     if wordNet:
+    #         frames= self.getWordFrames(sentence, word, pos)
+    #         for frame in frames:
+    #             if frame in self.frames:
+    #                 return True, frame
+    #     else:
+    #         frames= self.getFrames(word, pos)
+    #         for frame in frames:
+    #             if frame.name in self.frames and (frame.name not in self.Causal):
+    #                 return True, frame.name
+    #     return False, ""
 
-    def mapToFrame(self):
-        #For LUs not found in FrameNet, try to map it via WordNet or another similarity-based Ontology
-        return 0
+    def refineWord(self, sentence, word, pos):
+        frames= self.getFrames(word, pos)
+        eventFrames=[]
+        for frame in frames:
+            if (frame in self.frames) and (frame not in self.Causal):
+                eventFrames.append(frame)
+        if len(eventFrames)>0:
+            return True, str(eventFrames), "event1"
+        return False, "", ""
 
     def getWnPos(self, posTag):
         if posTag in self.nounTags:
@@ -112,10 +131,10 @@ class FrameNetRefiner:
             return 'a'
         return 'None'
 
-    def getLemma(self, word, posTag):
-        pos= self.getWnPos(posTag)
-        if pos== 'None':
-            return word
-        lemma= self.lmtzer.lemmatize(word, pos)
-        return str(lemma)
+    # def getLemma(self, word, posTag):
+    #     pos= self.getWnPos(posTag)
+    #     if pos== 'None':
+    #         return word
+    #     lemma= self.lmtzer.lemmatize(word, pos)
+    #     return str(lemma)
 

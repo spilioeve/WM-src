@@ -26,11 +26,12 @@ class CandidateEvents:
         self.file= file
         self.dir = dir
         self.stanfordLoader= DataExtractor(file, dir)
-        if refiner== 'FrameNet':
-            self.refiner= FrameNetRefiner()
-        else:
+        if refiner== 'Ontology':
             self.refiner = Ontology(dir)
-        self.lmtzr = WordNetLemmatizer()
+        else:
+            self.refiner = FrameNetRefiner()
+        self.frRefiner= FrameNetRefiner()
+        #self.lmtzr = WordNetLemmatizer()
 
     def getVerbEvents(self, sentenceIndex, events2, events, entities, refine=True):
         data= self.stanfordLoader.getDataPerSentence(sentenceIndex)
@@ -42,8 +43,6 @@ class CandidateEvents:
         spans = data['spans']
         sentenceEvents = {}
         sentenceEvents2= {}
-        # sentenceEvents = events
-        # sentenceEvents2= events2
         for index in range(len(lemmas)):
         #for item in lemmas:
             span = spans[index]
@@ -64,7 +63,11 @@ class CandidateEvents:
                 #     else:
                 #         flag= False
                 if refine:
-                    flag, frame, category= self.refiner.refineWord(sentence, lemmas[index], pos[index])
+                    flag, frame, category= self.frRefiner.refineWord(sentence, lemmas[index], pos[index])
+                    # flag2, frFrame, category2 = self.frRefiner.refineWord(sentence, lemmas[index], pos[index])
+                    # if not flag:
+                    #     flag= flag2
+                    #     category=category2
                 if flag:
                     token= tokens[index]
                     ####srlOut, nomBool= self.recognizeNomEventuality(token, data['NPs'])
@@ -82,8 +85,6 @@ class CandidateEvents:
             index=sentenceEvents2[span]['index']
             srlOut = self.getDependencies(sentenceIndex, index + 1, sentenceEvents)
             sentenceEvents2[span].update(srlOut)
-        print sentenceEvents2
-
         return sentenceEvents2, sentenceEvents
 
     def getLocAndTime(self, sentenceIndex):

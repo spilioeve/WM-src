@@ -54,6 +54,8 @@ def writeOutput(files):
                 ###Merged with Coreference & Temporal Seq???
             rst = RSTModel(events, eventLocalIndex, entities, entLocalIndex, sentence, lemmas, pos)
             causalRel= rst.getCausalNodes()### OR TRUE
+
+
             for relation in causalRel:
                 relIndex = writer.getIndex("Causal")
                 cause= relation["cause"]
@@ -86,7 +88,7 @@ def writeOutput(files):
             #         writer.writeRow("Causal", causalInfo)
             #     except:
             #         print "Relation Not found"
-    writer.saveExcelFile(project, 'output/'+ dataDir + 'v3.xlsx')
+    writer.saveExcelFile(project, 'output/'+ dataDir + 'v6.xlsx')
     # for file in files:
     #     data= odinData(file)
     #     eventReader= CandidateEvents(file, dir)
@@ -117,6 +119,16 @@ def writeOutput(files):
     # writer.saveExcelFile(dir, 'output/Para6'+'v5.xlsx' )
 
 
+def getOutputOnline(sentence):
+    os.chdir('/Users/evangeliaspiliopoulou/Desktop/stanfordCoreNLP')
+    inputF= open('userInput', 'w')
+    inputF.write(sentence)
+    inputF.close()
+    command= 'java -cp "*" edu.stanford.nlp.pipeline.StanfordCoreNLP -annotators tokenize,ssplit,pos,parse,lemma,ner,depparse -file userInput'+ ' -outputDirectory '+ project+ '/outputStanford' + ' -outputFormat \'json\''
+    os.system(command)
+    os.chdir(path)
+    writeOutput(['userInput'])
+    print "Process Complete"
 
 def odinData(file):
     currPath= os.getcwd()
@@ -129,19 +141,22 @@ def odinData(file):
     return output
 
 
+
 dataDir='MITRE_June18'
 #dataDir='Para6v10'
 projectName= '/South_Sudan_Famine'
 path = os.getcwd()
 project = os.path.dirname(path) + projectName
 
-#files= ['Paragraphs_SSudan']
-files= os.listdir(project+ '/data/'+dataDir)
-##files= ['FFP Fact Sheet_South Sudan_2018.01.17 BG', 'i8533en', 'FEWS NET South Sudan Famine Risk Alert_20170117 BG', 'FAOGIEWSSouthSudanCountryBriefSept2017 BG', '130035 excerpt BG', 'CLiMIS_FAO_UNICEF_WFP_SouthSudanIPC_29June_FINAL BG', 'FEWSNET South Sudan Outlook January 2018 BG', 'EA_Seasonal Monitor_2017_08_11 BG']
-if '.DS_Store' in files:
-    files= files[:files.index('.DS_Store')]+ files[files.index('.DS_Store')+1:]
-# files= os.listdir(project+ '/data/'+dataDir)
-# ##files= ['FFP Fact Sheet_South Sudan_2018.01.17 BG', 'i8533en', 'FEWS NET South Sudan Famine Risk Alert_20170117 BG', 'FAOGIEWSSouthSudanCountryBriefSept2017 BG', '130035 excerpt BG', 'CLiMIS_FAO_UNICEF_WFP_SouthSudanIPC_29June_FINAL BG', 'FEWSNET South Sudan Outlook January 2018 BG', 'EA_Seasonal Monitor_2017_08_11 BG']
-# if '.DS_Store' in files:
-#     files= files[:files.index('.DS_Store')]+ files[files.index('.DS_Store')+1:]
-writeOutput(files)
+def runSOFIA():
+    #files= ['Paragraphs_SSudan']
+    files= os.listdir(project+ '/data/'+dataDir)
+    ##files= ['FFP Fact Sheet_South Sudan_2018.01.17 BG', 'i8533en', 'FEWS NET South Sudan Famine Risk Alert_20170117 BG', 'FAOGIEWSSouthSudanCountryBriefSept2017 BG', '130035 excerpt BG', 'CLiMIS_FAO_UNICEF_WFP_SouthSudanIPC_29June_FINAL BG', 'FEWSNET South Sudan Outlook January 2018 BG', 'EA_Seasonal Monitor_2017_08_11 BG']
+    if '.DS_Store' in files:
+        files= files[:files.index('.DS_Store')]+ files[files.index('.DS_Store')+1:]
+    writeOutput(files)
+
+
+sentence="The intense rain caused flooding in the area."
+#getOutputOnline(sentence)
+runSOFIA()

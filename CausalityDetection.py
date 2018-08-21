@@ -47,6 +47,7 @@ class RSTModel:
         #WHat about correlation triggers?
         preventive = ['prevent', 'limit', 'restrict', 'constrain', 'block', 'bind', 'regulate'] ## Soft triggers
         correlation = ['relate', 'influence', 'correlate'] #Hard or soft? Think about it
+
         for index in range(len(lemmas)):
             lemma= lemmas[index]
             if lemma== 'cause':
