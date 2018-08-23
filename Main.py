@@ -12,8 +12,8 @@ def writeOutput(files):
     # dir = os.path.dirname(path) + '/' + project
     writer= ExcelWriter(['Causal', 'Events', 'Entities'])
     causalHeaders= ["Source_File", "Relation Index", "Relation", "Relation_Type", "Cause Index", "Cause", "Effect Index", "Effect", "Sentence"]
-    eventHeaders= ["Source_File", "Event Index", "Relation", "Event_Type", "Location", "Time", 'Agent Index', "Agent", 'Patient Index', "Patient", "Sentence"]
-    entityHeaders= ["Source_File", "Entity Index", "Entity", "Entity_Type", "Qualifier", "Sentence"]
+    eventHeaders= ["Source_File", "Event Index", "Relation", "Event_Type", "FrameNet_Frame", "Location", "Time", 'Agent Index', "Agent", 'Patient Index', "Patient", "Sentence"]
+    entityHeaders= ["Source_File", "Entity Index", "Entity", "Entity_Type", "FrameNet_Frame", "Qualifier", "Sentence"]
     writer.writeRow("Causal", causalHeaders)
     writer.writeRow("Events", eventHeaders)
     writer.writeRow("Entities", entityHeaders)
@@ -37,7 +37,7 @@ def writeOutput(files):
                 entity= entities[span]
                 entIndex= writer.getIndex('Entities')
                 entLocalIndex[span]= 'N' + str(entIndex - 1)
-                entInfo= [str(file), 'N' + str(entIndex - 1), string.lower(entity["trigger"]), entity["frame"], string.lower(entity['qualifier']), sentence]
+                entInfo= [str(file), 'N' + str(entIndex - 1), string.lower(entity["trigger"]), entity["frame"], entity["FrameNetFr"], string.lower(entity['qualifier']), sentence]
                 writer.writeRow('Entities', entInfo)
             eventLocalIndex={}
             for span in events.keys():
@@ -46,7 +46,7 @@ def writeOutput(files):
                 eventLocalIndex[span]= 'E' + str(evIndex - 1)
                 patient= writer.getIndexFromSpan(entLocalIndex, event['patient'][0])
                 agent = writer.getIndexFromSpan(entLocalIndex, event['agent'][0])
-                eventInfo = [str(file), 'E' + str(evIndex - 1), event["trigger"], event["frame"], event['location'],
+                eventInfo = [str(file), 'E' + str(evIndex - 1), event["trigger"], event["frame"], event["FrameNetFr"], event['location'],
                              event['temporal'], agent, event['agent'][1], patient, event['patient'][1], sentence]
                 writer.writeRow('Events', eventInfo)
            ##Model RST currently based only on Events. Being able to bring Entities in front???
@@ -88,7 +88,7 @@ def writeOutput(files):
             #         writer.writeRow("Causal", causalInfo)
             #     except:
             #         print "Relation Not found"
-    writer.saveExcelFile(project, 'output/'+ dataDir + 'v6.xlsx')
+    writer.saveExcelFile(project, 'output/'+ dataDir + 'v7.xlsx')
     # for file in files:
     #     data= odinData(file)
     #     eventReader= CandidateEvents(file, dir)

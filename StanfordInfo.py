@@ -25,6 +25,7 @@ class DataExtractor:
             spans=[]
             time = ""
             loc = ""
+            prev=0
             for index in range(len(sentTokens)):
                 lemma= sentTokens[index]['lemma']
                 lemma= lemma.lower()
@@ -40,13 +41,18 @@ class DataExtractor:
                 tokens.append({"start": start, "end": end, "token":token, 'lemma': lemma, 'pos': str(sentTokens[index]['pos'])})
                 ner= sentTokens[index]["ner"]
                 if str(ner)== 'DATE':
-                    time+= " " + token
+                    time+= token +', '
                 elif str(ner)== "LOCATION":
-                    loc+= " "+ token
+                    if index -prev>1:
+                        loc+= ','
+                    loc+= ' '+ token
+                    prev=index
                 lemmas.append(lemma)
                 spans.append((start, end))
                 #ner= str(sentTokens[index]['ner'])
                 #mapping.append({"start": start, "end": end, "pos": pos, "lemma": lemma, "index": ind, "token": token})
+            time=time.strip(', ')
+            loc= loc.strip(', ')
             nounPhrases= self.processParse(parse, tokens)
             sentData = {"tokens": tokens, "lemmas": lemmas, "pos": pos, "location": loc, "temporal": time, "NPs": nounPhrases, "deps": dep, "sentence": sentence, 'spans': spans}
             #sentData.setNER(ner)

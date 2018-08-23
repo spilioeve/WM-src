@@ -29,3 +29,8 @@ class TemporalModel:
             bounds[b].update({'prev': boundVal[index-1], 'next': boundVal[index+1]})
         return bounds
 
+
+
+    ##Pass events and their temporal triggers there, we need them in order to define temporal sequences
+    ##Implement ML features: temporal triggers, events, positions (edit distance is how far in event space
+        # each event is, NOT in word space)

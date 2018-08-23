@@ -70,7 +70,7 @@ class FrameNetRefiner:
     #eg: frames= getWordFrames("I went to college", "go", "v")
     #
     def getWordFrames(self, sentence, lemma, pos):
-        pos = self.getWnPos(pos)
+        pos = self.getPos(pos)
         punc= string.punctuation
         i= sentence.split(' ')
         tokens= []
@@ -84,11 +84,11 @@ class FrameNetRefiner:
 
     def getFrames(self, word, pos):
         #Search within the Taxonomy to find LU
-        posTag= self.getWnPos(pos)
+        posTag= self.getPos(pos)
         term= word+'.'+posTag
         frames=[]
         if term not in self.frameLUs:
-            return frames
+            return ""
         return self.frameLUs[term]
         # lus= fn.lus()
         # frames=[]
@@ -122,7 +122,7 @@ class FrameNetRefiner:
             return True, str(eventFrames), "event1"
         return False, "", ""
 
-    def getWnPos(self, posTag):
+    def getPos(self, posTag):
         if posTag in self.nounTags:
             return 'n'
         elif posTag in self.verbTags:

@@ -47,7 +47,6 @@ class RSTModel:
         #WHat about correlation triggers?
         preventive = ['prevent', 'limit', 'restrict', 'constrain', 'block', 'bind', 'regulate'] ## Soft triggers
         correlation = ['relate', 'influence', 'correlate'] #Hard or soft? Think about it
-
         for index in range(len(lemmas)):
             lemma= lemmas[index]
             if lemma== 'cause':
@@ -66,36 +65,6 @@ class RSTModel:
                 triggers.append((tokens[index], "left", 'CorrelateRelation'))
         return triggers
 
-    #### Implement to include second order events
-    ### Those are taken and ranked by the Extractor
-    ### Here it is left only a very simple alignment (similar to CausalNodes) to cause/effect (income outcome nodes)
-    ###To-do to fix these issues of mapping
-
-    # def set2OrderEvents(self, eventCandidates):
-    #     triggers=[]
-    #     for k in eventCandidates.keys():
-    #         event= eventCandidates[k]
-    #         triggers.append((event['trigger'], 'left'))
-            
-
-
-    # def detectTrendTriggers(self, lemmas):
-    #     triggers=[]
-    #     tokens= self.sentence.split(' ')
-    #     causal={'CauseEffect':['impact', 'affect', 'drive', 'lead'], 'EffectCause':['because', 'due']}
-    #     for index in range(len(lemmas)):
-    #         lemma= lemmas[index]
-    #         if lemma== 'cause':
-    #             if lemmas[index+1]== 'by':
-    #                 triggers.append((tokens[index], "right"))
-    #             else:
-    #                 triggers.append((tokens[index], "left"))
-    #         if lemma in causal['CauseEffect']:
-    #             triggers.append((tokens[index], "left"))
-    #         elif lemma in causal['EffectCause']:
-    #             triggers.append((tokens[index], 'right'))
-    #     return triggers
-
     def setBounds(self):
         bounds={}
         boundVal = [-1, len(self.sentence) + 1]
@@ -110,12 +79,6 @@ class RSTModel:
             b=boundVal[index]
             bounds[b].update({'prev': boundVal[index-1], 'next': boundVal[index+1]})
         return bounds
-
-    # def insertBound(self, newTriggers):
-    #     bounds= self.bounds
-    #     boundVal= bounds.keys()
-    #     boundVal+= [-1, len(self.sentence) + 1]
-
 
     ##If Effect/Cause are empty, return no relation
     ##Fix model by searching more Events from previous module, given that there is a hard Relations (Aka hard Causal Trigger)
@@ -139,41 +102,41 @@ class RSTModel:
                 causality.append({'trigger': trigger, 'cause': fCause, 'effect': fEffect, 'type': relType})
         return causality
 
-    def distanceHeuristic(self, triggerRST, causalClause, effectClause):
-        rIndex= self.sentence.index(triggerRST)
-        cIndex= self.sentence.index(causalClause)
-        eIndex = self.sentence.index(effectClause)
-        # cause= causalClause
-        # effect= effectClause
-        #  If not mapped to any event, then try to map it to some entity Ni. Then we must bring Ni in the event space
-        # This means that Ni was wrongly labeled as entity: instead it is a nominal event that we failed to detect
-        # this brings to light how RST interact back-and-forth with Event Detection
-        ####
-        #As an example use the first sentence of Par6. "Food insecurity levels" is not an easy-to-detect event
-        if cIndex> eIndex:
-            if rIndex< eIndex: #r<e<c
-                effect, i= self.locateEvents(rIndex, 'right')
-                cause, j= self.locateEvents(i, 'right')
-            elif rIndex< cIndex: #e<r<c
-
-                effect, i= self.locateEvents(rIndex, 'left')
-                cause, j= self.locateEvents(rIndex, 'right')
-            else: #e<c<r
-                cause, j = self.locateEvents(rIndex, 'left')
-                effect, i = self.locateEvents(j, 'left')
-        else:
-            if rIndex < cIndex: #r<c<e
-                cause, j = self.locateEvents(rIndex, 'right')
-                effect, i = self.locateEvents(j, 'right')
-            elif rIndex < eIndex: #c<r<e
-                effect, i = self.locateEvents(rIndex, 'right')
-                cause, j = self.locateEvents(rIndex, 'left')
-            else:  # c<e<r
-                effect, i = self.locateEvents(rIndex, 'left')
-                cause, j = self.locateEvents(i, 'left')
-        fEffect= self.format(effect)
-        fCause= self.format(cause)
-        return fCause, fEffect
+    # def distanceHeuristic(self, triggerRST, causalClause, effectClause):
+    #     rIndex= self.sentence.index(triggerRST)
+    #     cIndex= self.sentence.index(causalClause)
+    #     eIndex = self.sentence.index(effectClause)
+    #     # cause= causalClause
+    #     # effect= effectClause
+    #     #  If not mapped to any event, then try to map it to some entity Ni. Then we must bring Ni in the event space
+    #     # This means that Ni was wrongly labeled as entity: instead it is a nominal event that we failed to detect
+    #     # this brings to light how RST interact back-and-forth with Event Detection
+    #     ####
+    #     #As an example use the first sentence of Par6. "Food insecurity levels" is not an easy-to-detect event
+    #     if cIndex> eIndex:
+    #         if rIndex< eIndex: #r<e<c
+    #             effect, i= self.locateEvents(rIndex, 'right')
+    #             cause, j= self.locateEvents(i, 'right')
+    #         elif rIndex< cIndex: #e<r<c
+    #
+    #             effect, i= self.locateEvents(rIndex, 'left')
+    #             cause, j= self.locateEvents(rIndex, 'right')
+    #         else: #e<c<r
+    #             cause, j = self.locateEvents(rIndex, 'left')
+    #             effect, i = self.locateEvents(j, 'left')
+    #     else:
+    #         if rIndex < cIndex: #r<c<e
+    #             cause, j = self.locateEvents(rIndex, 'right')
+    #             effect, i = self.locateEvents(j, 'right')
+    #         elif rIndex < eIndex: #c<r<e
+    #             effect, i = self.locateEvents(rIndex, 'right')
+    #             cause, j = self.locateEvents(rIndex, 'left')
+    #         else:  # c<e<r
+    #             effect, i = self.locateEvents(rIndex, 'left')
+    #             cause, j = self.locateEvents(i, 'left')
+    #     fEffect= self.format(effect)
+    #     fCause= self.format(cause)
+    #     return fCause, fEffect
 
     def locateEvents2(self, bound, direction):
         keys = self.events.keys()
@@ -206,31 +169,17 @@ class RSTModel:
         return list2, list1
 
 
-    def locateEvents(self, bound, direction):
-        triggerIndex= self.triggers.index(bound)
-        keys= self.events.keys()
-        if direction == 'right':
-            keys.sort()
-        else:
-            keys.sort(reverse=True)
-        event= self.events[keys[0]]
-
-        # #pdb.set_trace()
-        index=0
-        # for k in keys:
-        #     event= self.events[k]
-        #     index = self.sentence.index(event['trigger'])
-        #     if (direction=='right' and index>bound):
-        #         #event = event.update({'key': k})
-        #         return k, index
-        #     elif (direction=='left' and index<bound):
-        #         #event = event.update({'key': k})
-        #         return k, index
-        return (0, 0), index
+    #Implement Causality as a Model to detect arguments
+    #Fit it with the sentence events, their potential FrameNet Frames, their distance (event distance from the bounds)
+    # and the causal trigger/word. Also the entire sentence to capture any missing connectors (like and, to, etc)
+        
+    #Then run the classifier to see what we might get as a result???
+    #Use the BeCAuse data to train the model and test it??
+    #
 
 
-    def determineRST(self, sentence):
-        return 'Causality'
+    #After the model is built, we need to find a way to propagate the non-participant events in the causality as args to
+    #other events via the EventDetector module. Let's see how this goes lol
 
 
 

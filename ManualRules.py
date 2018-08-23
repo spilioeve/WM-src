@@ -64,21 +64,21 @@ class CandidateEvents:
                 #         flag= False
                 if refine:
                     flag, frame, category= self.frRefiner.refineWord(sentence, lemmas[index], pos[index])
-                    # flag2, frFrame, category2 = self.frRefiner.refineWord(sentence, lemmas[index], pos[index])
+                    flag2, frame2, category2 = self.refiner.refineWord(sentence, lemmas[index], pos[index])
                     # if not flag:
                     #     flag= flag2
                     #     category=category2
-                if flag:
+                if flag or flag2:
                     token= tokens[index]
                     ####srlOut, nomBool= self.recognizeNomEventuality(token, data['NPs'])
-                    if category=='event2':
+                    if category2=='event2':
                         sentenceEvents2[span] = {"trigger": token["token"], "lemma": lemmas[index], "index": index,
-                                                "frame": frame, "temporal": data["temporal"],
+                                                "frame": frame2, 'FrameNetFr': frame, "temporal": data["temporal"],
                                                 "location": data["location"]}
                     else:
                         srlOut= self.getDependencies(sentenceIndex, index+1, entities)
                         sentenceEvents[span] ={"trigger": token["token"], "lemma": lemmas[index], "index": index,
-                                  "frame": frame, "temporal": data["temporal"], "location": data["location"]}
+                                  "frame": frame2, 'FrameNetFr': frame, "temporal": data["temporal"], "location": data["location"]}
                         sentenceEvents[span].update(srlOut)
         for span in sentenceEvents2.keys():
             #pdb.set_trace()
@@ -177,28 +177,6 @@ class CandidateEvents:
         normalized = normalized.strip(', ')
         return mySpan, normalized
 
-    def writeEvents(self, sentIndex, currIndex, ws1, entities):
-        events= self.getEventsWithDependencies(sentIndex)
-        sentence= self.getSentence(sentIndex)
-        for event in events:
-            ws1["A" + str(currIndex)] = str(self.file)
-            ws1["B" + str(currIndex)] = 'E'+str(currIndex-1)
-            ws1["C" + str(currIndex)] = event['trigger']
-            ws1["D" + str(currIndex)] = event['frame']
-            if 'location' in event:
-                ws1["E" + str(currIndex)] = event['location']
-            if 'time' in event:
-                ws1["F" + str(currIndex)] = event['time']
-            if 'agent' in event:
-                agent=  self.mapToEntity(event['agent'], entities)
-                ws1["G" + str(currIndex)] = agent
-            if 'patient' in event:
-                patient = self.mapToEntity(event['patient'], entities)
-                ws1["H" + str(currIndex)] = patient
-            ws1["I" + str(currIndex)] = sentence
-            currIndex+=1
-        return currIndex
-
     def classifyNominals(self, sentenceIndex):
         events = {}
         entities={}
@@ -209,27 +187,31 @@ class CandidateEvents:
         for item in nominals:
             span= (item['start'], item['end'])
             lemmaH = item['headLemma']
-            booleanH, frameH, category = self.refiner.refineWord(sentence, lemmaH, 'n')
+            booleanH, frameH, category = self.refiner.refineWord(sentence, lemmaH, 'NN')
+            booleanH2, frameH2, category2 = self.frRefiner.refineWord(sentence, lemmaH, 'NN')
             if len(item['eventuality'])>0:
-                entities[span]= {'text':item['text'], 'trigger': item['token'], 'frame': frameH, 'qualifier': item['qualifier']}
+                frameH2 = self.frRefiner.getFrames(lemmaH, 'NN')
+                entities[span]= {'text':item['text'], 'trigger': item['token'], 'frame': frameH, 'FrameNetFr': str(frameH2), 'qualifier': item['qualifier']}
                 event = item['eventuality']
                 lemma= event['lemma']
-                boolean, frame, category = self.refiner.refineWord(sentence, lemma, 'v')
-                if boolean:
+                boolean, frame, category = self.refiner.refineWord(sentence, lemma, 'VBG')
+                boolean2, frame2, category2 = self.frRefiner.refineWord(sentence, lemma, 'VBG')
+                if boolean or boolean2:
                     eventSpan= (event['start'], event['end'])
                     if category== 'event2':
-                        events2[eventSpan]= {'trigger': event['token'], 'location': data['location'], 'temporal': data['temporal'], 'frame': frame}
+                        events2[eventSpan]= {'trigger': event['token'], 'location': data['location'], 'temporal': data['temporal'], 'frame': frame, 'FrameNetFr': frame2}
                     else:
-                        events[eventSpan]= {'trigger': event['token'], 'location': data['location'], 'temporal': data['temporal'], 'agent':(0, ""), 'patient': ([span], item['token']), 'frame': frame}
+                        events[eventSpan]= {'trigger': event['token'], 'location': data['location'], 'temporal': data['temporal'], 'agent':(0, ""), 'patient': ([span], item['token']), 'frame': frame, 'FrameNetFr': frame2}
 
-            elif booleanH:
+            elif booleanH or booleanH2:
                 if category== 'event2':
-                    events2[span] = {'trigger': item['text'], 'frame': frameH, 'location': data['location'],
+                    events2[span] = {'trigger': item['text'], 'frame': frameH, 'FrameNetFr': frameH2, 'location': data['location'],
                                     'temporal': data['temporal']}
                 else:
-                    events[span] = {'trigger': item['text'], 'frame': frameH, 'location': data['location'], 'temporal': data['temporal'], 'patient': (0, ""), 'agent':(0, "")}
+                    events[span] = {'trigger': item['text'], 'frame': frameH, 'FrameNetFr': frameH2, 'location': data['location'], 'temporal': data['temporal'], 'patient': (0, ""), 'agent':(0, "")}
             else:
-                entities[span] = {'text':item['text'],'trigger': item['token'], 'frame': frameH, 'qualifier': item['qualifier']}
+                frameH2= self.frRefiner.getFrames(lemmaH, 'NN')
+                entities[span] = {'text':item['text'],'trigger': item['token'], 'frame': frameH, 'FrameNetFr': str(frameH2), 'qualifier': item['qualifier']}
         return events2, events, entities
 
     def nominalEvents(self, sentence, candidateEvents):
