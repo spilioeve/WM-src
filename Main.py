@@ -25,8 +25,6 @@ def writeOutput(files):
         numSentences = eventReader.dataSize()
         allEvents2, allEvents, allEntities = eventReader.getEvents_Entities()
         for index in range(numSentences):
-            #sentEntities = data[index]['entities']
-            #relations = data[index]['CauseRelations']
             sentence = eventReader.getSentence(index)
             lemmas= eventReader.getSentenceLemmas(index)
             pos= eventReader.getSentencePOSTags(index)
@@ -54,8 +52,6 @@ def writeOutput(files):
                 ###Merged with Coreference & Temporal Seq???
             rst = RSTModel(events, eventLocalIndex, entities, entLocalIndex, sentence, lemmas, pos)
             causalRel= rst.getCausalNodes()### OR TRUE
-
-
             for relation in causalRel:
                 relIndex = writer.getIndex("Causal")
                 cause= relation["cause"]
@@ -64,30 +60,6 @@ def writeOutput(files):
                 causalInfo = [str(file), 'R' + str(relIndex - 1), relation["trigger"], relType,
                                          cause[0], cause[1], effect[0], effect[1], sentence]
                 writer.writeRow("Causal", causalInfo)
-
-            # for relation in allEvents2:
-            #     relIndex = writer.getIndex("Causal")
-            #     #cause, effect = rst.locateEvents2(bound, 'left')
-            #
-            #     cause = relation["cause"]
-            #     effect = relation["effect"]
-            #     causalInfo = [str(file), 'R' + str(relIndex - 1), relation["trigger"], "IncreaseRelation",
-            #                   cause[0], cause[1], effect[0], effect[1], sentence]
-            #     writer.writeRow("Causal", causalInfo)
-
-            # for relation in relations:
-            #     print "relation"
-            #     print relation
-            #     try:
-            #         relIndex = writer.getIndex("Causal")
-            #         cause, effect= rst.distanceHeuristic(relation["trigger"], relation['cause'], relation['effect'])
-            #         print relation['cause'], cause
-            #         print relation['effect'], effect
-            #         causalInfo = [str(file), 'R' + str(relIndex - 1), relation["trigger"], "CausalRelation",
-            #                      cause[0], cause[1], effect[0], effect[1], sentence]
-            #         writer.writeRow("Causal", causalInfo)
-            #     except:
-            #         print "Relation Not found"
     writer.saveExcelFile(project, 'output/'+ dataDir + 'v7.xlsx')
     # for file in files:
     #     data= odinData(file)
@@ -148,6 +120,8 @@ projectName= '/South_Sudan_Famine'
 path = os.getcwd()
 project = os.path.dirname(path) + projectName
 
+
+
 def runSOFIA():
     #files= ['Paragraphs_SSudan']
     files= os.listdir(project+ '/data/'+dataDir)
@@ -155,6 +129,7 @@ def runSOFIA():
     if '.DS_Store' in files:
         files= files[:files.index('.DS_Store')]+ files[files.index('.DS_Store')+1:]
     writeOutput(files)
+
 
 
 sentence="The intense rain caused flooding in the area."
