@@ -110,6 +110,10 @@ class CandidateEvents:
         pos = data['pos']
         return pos
 
+    def getTokens(self, sentenceIndex):
+        data = self.stanfordLoader.getDataPerSentence(sentenceIndex)
+        return data['tokens']
+
     def getEvents_Entities(self):
         allEvents2=[]
         allEvents=[]
