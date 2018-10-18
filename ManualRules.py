@@ -26,6 +26,7 @@ class CandidateEvents:
         self.file= file
         self.dir = dir
         self.stanfordLoader= DataExtractor(file, dir)
+        self.sentences= self.stanfordLoader.sentences
         if refiner== 'Ontology':
             self.refiner = Ontology(dir)
         else:
@@ -95,9 +96,7 @@ class CandidateEvents:
         return self.stanfordLoader.getDataSize()
 
     def getSentence(self, sentenceIndex):
-        data= self.stanfordLoader.getDataPerSentence(sentenceIndex)
-        sentence= data['sentence']
-        return sentence
+        return self.sentences[sentenceIndex]
 
     def getSentenceLemmas(self, sentenceIndex):
         data= self.stanfordLoader.getDataPerSentence(sentenceIndex)

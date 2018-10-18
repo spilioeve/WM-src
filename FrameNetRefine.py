@@ -86,9 +86,8 @@ class FrameNetRefiner:
         #Search within the Taxonomy to find LU
         posTag= self.getPos(pos)
         term= word+'.'+posTag
-        frames=[]
         if term not in self.frameLUs:
-            return ""
+            return "" ##Change this from empty string. Modify also ManualRules accordingly
         return self.frameLUs[term]
         # lus= fn.lus()
         # frames=[]
@@ -97,6 +96,25 @@ class FrameNetRefiner:
         #     if name == term:
         #         frames.append(lu.frame)
         #return frames
+
+    def getPhraseFrames(self, phrase):
+        words = filter(lambda a: a != '', phrase.split(' '))
+        frames=[]
+        for w in words:
+            w=w.lower()
+            nFrames= self.getFrames(w, 'NN')
+            vFrames = self.getFrames(w, 'VB')
+            if len(nFrames)>0:
+                for f in nFrames:
+                    if f not in frames:
+                        frames.append(f)
+            if len(vFrames) > 0:
+                for f in vFrames:
+                    if f not in frames:
+                        frames.append(f)
+        return frames
+
+
 
     #This is to refine Events
     # def refineWord(self, sentence, word, pos, wordNet= False):

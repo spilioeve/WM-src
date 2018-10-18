@@ -8,6 +8,7 @@ class DataExtractor:
         self.file = file
         self.dir = dir
         self.structuredData=[]
+        self.sentences=[]
         self.getInfoStanford()
 
     def getInfoStanford(self):
@@ -56,11 +57,11 @@ class DataExtractor:
             nounPhrases= self.processParse(parse, tokens)
             sentData = {"tokens": tokens, "lemmas": lemmas, "pos": pos, "location": loc, "temporal": time, "NPs": nounPhrases, "deps": dep, "sentence": sentence, 'spans': spans}
             #sentData.setNER(ner)
+            self.sentences.append(sentence)
             self.structuredData.append(sentData)
 
     def getDataPerSentence(self, index):
         return self.structuredData[index]
-
 
     def getDataSize(self):
         return len(self.structuredData)

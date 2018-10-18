@@ -1,6 +1,7 @@
 import os
 from ManualRules import CandidateEvents
 from nltk.corpus import framenet as fn
+import numpy as np
 
 class Loader():
 
@@ -11,16 +12,17 @@ class Loader():
         self.testF=['23']
         self.embeddings= self.setEmbeddings() ##Default size 50
         self.fnEmbeddings= self.setFNEmbedding() ##Defualt size fn.size(), 1-hot vectors
+        # self.vocabulary={}
 
 
     def getY(self, file, folder):
-        Y={}
         f=open(self.dir+'/'+folder+'/'+file)
         text= f.read()
         lines= text.split('\n')
         f.close()
         #relations= {'Temporal':{}, 'Comparison':{}, 'Contingency':{}, 'Expansion':{}}
-        Y={'Implicit':{}, 'Explicit':{}}
+        Y={'arg1':{}, 'arg2':{}, 'rel':{}}
+        allSenses = ['Temporal', 'Comparison', 'Contingency', 'Expansion']
         for line in lines:
             if len(line)>1:
                 items= line.split('|')
@@ -29,41 +31,51 @@ class Loader():
                     span= [items[6], items[6]]
                     #text= items[9]
                     senses= [items[11].split('.')[0], items[12].split('.')[0], items[13].split('.')[0], items[14].split('.')[0]]
+                    y=[0., 0., 0., 0.]
+                    for i in senses:
+                        index= allSenses.index(i)
+                        y[index]= 1.
                     arg1= items[22].split('..')
                     arg2= items[32].split('..')
-                    Y['Implicit'].update({arg1:[senses, 1]})
-                    Y['Implicit'].update({arg2: [senses, 2]})
+                    Y['arg1'].update({arg1:y})
+                    Y['arg2'].update({arg2: y})
                     # relations[sense][span]= [relType, text, arg1, arg2]
 
                 elif relType== 'Explicit':
                     span= items[3].split('..')
                     #text= items[5]
                     senses = [items[11].split('.')[0], items[12].split('.')[0]]
+                    y = [0., 0., 0., 0.]
+                    for i in senses:
+                        index = allSenses.index(i)
+                        y[index] = 1.
                     arg1 = items[22].split('..')
                     arg2 = items[32].split('..')
-                    Y['Explicit'].update({arg1: [senses, 1]})
-                    Y['Explicit'].update({arg2: [senses, 2]})
-                    Y['Explicit'].update({span: [senses, 0]})
+                    Y['arg1'].update({arg1: y})
+                    Y['arg2'].update({arg2: y})
+                    Y['rel'].update({span: y})
                     # relations[sense][span] = [relType, text, arg1, arg2]
+                    ###Add direction here!!!
+                    #By analyzing the children classes, write subroutine ---Minor issue
+                    #Classes should then become -1, 0, 1. Where -1 means opposite direction
         return Y
 
     def getData(self, mode):
         data={}
-        allSenses=['Temporal', 'Comparison', 'Contingency', 'Expansion']
         folders=self.trainF
         if mode=='dev':
             folders= self.devF
         elif mode== 'test':
             folders= self.testF
+        data_X = []
+        data_Y = []
         for folder in folders:
             files=os.listdir(self.dir+'/data/'+folder)
             for file in files:
                 ########
                 Y= self.getY(folder, file)
-                y = Y['Explicit']
-                y.update(Y['Implicit'])
-                data_X=[]
-                data_Y=[]
+                # data_X=[]
+                # data_Y=[]
                 eventReader= CandidateEvents(file, self.dir, 'none')
                 numSentences = eventReader.dataSize()
                 for index in range(numSentences):
@@ -87,14 +99,19 @@ class Loader():
                         fnVector= self.getFNEmbeddings(frame)
                         xVector= wordVector+fnVector+event_entityVector
                         data_X.append(xVector)
-                        yVector= [0., 0., 0., 0., -1.]
-                        if span in y:
-                            senses, yType= y[span]
-                            for sense in senses:
-                                if sense in allSenses:
-                                    i= allSenses.index(sense)
-                                    yVector[i]=1.
-                            yVector[-1]= yType
+                        #Y= [Temporal, Comparison, Contingency, Expansion, Arg1/Arg2/Rel]
+                        #Arg1= 1, Arg2=2, Rel=0
+                        yVector= [0.] *15
+                        if span in Y:
+                            if span in Y['rel']:
+                                yVector[:4]= Y['rel'][span]
+                                yVector[4]= 1.
+                            if span in Y['arg1']:
+                                yVector[5:9] = Y['arg1'][span]
+                                yVector[9] = 1.
+                            if span in Y['arg2']:
+                                yVector[10:14] = Y['arg2'][span]
+                                yVector[14] = 1.
                         data_Y.append(yVector)
                     #data.append({'events': events, 'entities': entities, 'sentence': sentence})
                     ##Maybe change the data to reflect all combinations of events?
@@ -103,8 +120,8 @@ class Loader():
                     #NONONONO wrong!!! We do not want to map the events, as we cannot provide supervision for that
                     #Supervision can be offered only to the type of relation involved. So what we can do is simply provide ALL EVENTS in the sentence
                 #############
-                data[file]= [data_X, data_Y]
-        return data
+                # data[file]= [data_X, data_Y]
+        return data_X, data_Y
 
     def setEmbeddings(self, embFile= 'embeddings.txt'):
         f=open(os.path.dirname(self.dir)+ embFile)
@@ -123,7 +140,7 @@ class Loader():
     def getEmbeddings(self, word):
         if word in self.embeddings:
             return self.embeddings[word]
-        v=[0. for  i in range(50)]
+        v = np.zeros(50)
         return v
 
     def setFNEmbedding(self):
@@ -138,13 +155,17 @@ class Loader():
         return embedding
 
     def getFNEmbeddings(self, fnList):
-        v = [0.] * len(self.fnEmbeddings['Annoyance'])
+        v = np.zeros(len(self.fnEmbeddings['Annoyance']))
         if len(fnList)==0:
             return v
         for frame in fnList:
             v_i= self.fnEmbeddings[frame]
             v+= v_i
         return v
+
+    def getLabels(self):
+        labels=[]
+        return labels
 
 
 
