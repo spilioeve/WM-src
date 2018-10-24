@@ -13,9 +13,9 @@ def writeOutput(files):
     # path = os.getcwd()
     # dir = os.path.dirname(path) + '/' + project
     writer= ExcelWriter(['Causal', 'Events', 'Entities', 'Variables'])
-    causalHeaders= ["Source_File", 'Query', "Relation Index", "Relation", "Relation_Type", "Cause Index", "Cause", "Effect Index", "Effect", "Sentence"]
-    eventHeaders= ["Source_File", 'Query', "Event Index", "Relation", "Event_Type", "FrameNet_Frame", "Indicator", "Location", "Time", 'Agent Index', "Agent", 'Patient Index', "Patient", "Sentence"]
-    entityHeaders= ["Source_File", 'Query', "Entity Index", "Entity", "Entity_Type", "FrameNet_Frame", "Qualifier", "Sentence"]
+    causalHeaders= ["Source_File", 'Query', "Score", "Relation Index", "Relation", "Relation_Type", "Indicator", "Cause Index", "Cause", "Effect Index", "Effect", "Sentence"]
+    eventHeaders= ["Source_File", 'Query', "Score", "Event Index", "Relation", "Event_Type", "FrameNet_Frame", "Indicator", "Location", "Time", 'Agent Index', "Agent", 'Patient Index', "Patient", "Sentence"]
+    entityHeaders= ["Source_File", 'Query', "Score", "Entity Index", "Entity", "Entity_Type", "FrameNet_Frame", "Indicator", "Qualifier", "Sentence"]
     variableHeaders=["Source_File", 'Sentence', 'Indicator', 'Index']
     writer.writeRow("Causal", causalHeaders)
     writer.writeRow("Events", eventHeaders)
@@ -29,7 +29,7 @@ def writeOutput(files):
         numSentences = eventReader.dataSize()
         data = eventReader.getEvents_Entities()
         for index in range(numSentences):
-            writer= writeSentence(file, index, writer, eventReader, data, 'None', scoring= True)
+            writer= writeSentence(file, index, writer, eventReader, data, 'None', 'None', scoring= True)
     writer.saveExcelFile(project, 'output/'+ dataDir + 'v10.xlsx')
     # for file in files:
     #     data= odinData(file)
@@ -62,11 +62,11 @@ def writeOutput(files):
 
 def writeQueryBasedOutput(files, queryList):
     writer = ExcelWriter(['Causal', 'Events', 'Entities', 'Variables'])
-    causalHeaders = ["Source_File", 'Query', "Relation Index", "Relation", "Relation_Type", "Cause Index", "Cause",
+    causalHeaders = ["Source_File", 'Query', "Score", "Relation Index", "Relation", "Relation_Type", "Indicator", "Cause Index", "Cause",
                      "Effect Index", "Effect", "Sentence"]
-    eventHeaders = ["Source_File", 'Query', "Event Index", "Relation", "Event_Type", "FrameNet_Frame", "Location", "Time",
+    eventHeaders = ["Source_File", 'Query', "Score", "Event Index", "Relation", "Event_Type", "FrameNet_Frame", "Indicator", "Location", "Time",
                     'Agent Index', "Agent", 'Patient Index', "Patient", "Sentence"]
-    entityHeaders = ["Source_File", 'Query', "Entity Index", "Entity", "Entity_Type", "FrameNet_Frame", "Qualifier", "Sentence"]
+    entityHeaders = ["Source_File", 'Query', "Score", "Entity Index", "Entity", "Entity_Type", "FrameNet_Frame", "Indicator", "Qualifier", "Sentence"]
     variableHeaders = ["Source_File", 'Query', 'Sentence', 'Indicator', 'Index']
     writer.writeRow("Causal", causalHeaders)
     writer.writeRow("Events", eventHeaders)
@@ -81,13 +81,14 @@ def writeQueryBasedOutput(files, queryList):
             data = eventReader.getEvents_Entities()
             query_sentences= query_finder.findQuery()
             for index in query_sentences:
-                writer= writeSentence(file, index, writer, eventReader, data, query, True)
-    writer.saveExcelFile(project, 'output/' + 'Query_search.v2.xlsx')
+                writer= writeSentence(file, index, writer, eventReader, data, query, query_finder, True)
+    writer.saveExcelFile(project, 'output/' + 'Query_search.v4.xlsx')
 
-def writeSentence(file, index, writer, eventReader, data, query, scoring= False):
+def writeSentence(file, index, writer, eventReader, data, query, query_finder, scoring= False):
     allEvents2, allEvents, allEntities = data
     sentence = eventReader.getSentence(index)
     ontologyMapper = Ontology(project)
+    scores=''
     if scoring:
         scores = ontologyMapper.stringMatching(sentence, 'WorldBank')
         writer.writeRow('Variables', [str(file), query, sentence, str(scores)])
@@ -101,26 +102,23 @@ def writeSentence(file, index, writer, eventReader, data, query, scoring= False)
         entIndex = writer.getIndex('Entities')
         entLocalIndex[span] = 'N' + str(entIndex - 1)
         #scores = ontologyMapper.stringMatching(entity["trigger"], 'WorldBank')
-        entInfo = [str(file), query, 'N' + str(entIndex - 1), string.lower(entity["trigger"]), entity["frame"],
-                   entity["FrameNetFr"], string.lower(entity['qualifier']), sentence]
+        score= query_finder.rankNode(entity, 'entity')
+        entInfo = [str(file), query, str(score), 'N' + str(entIndex - 1), string.lower(entity["trigger"]), entity["frame"],
+                   str(entity["FrameNetFr"]), str(scores), string.lower(entity['qualifier']), sentence]
         writer.writeRow('Entities', entInfo)
     eventLocalIndex = {}
+    eventScores={}
     for span in events.keys():
         event = events[span]
         evIndex = writer.getIndex("Events")
         eventLocalIndex[span] = 'E' + str(evIndex - 1)
         patient = writer.getIndexFromSpan(entLocalIndex, event['patient'][0])
         agent = writer.getIndexFromSpan(entLocalIndex, event['agent'][0])
-        if scoring:
-            try:
-                scores = ontologyMapper.stringMatching(event["lemma"], 'WorldBank')
-            except:
-                scores = ''
-            eventInfo = [str(file), query, 'E' + str(evIndex - 1), event["trigger"], event["frame"], event["FrameNetFr"], str(scores), event['location'],
+        score = query_finder.rankNode(event, 'event')
+        eventScores['E' + str(evIndex - 1)] = score
+
+        eventInfo = [str(file), query, str(score), 'E' + str(evIndex - 1), event["trigger"], event["frame"], str(event["FrameNetFr"]), str(scores), event['location'],
                          event['temporal'], agent, event['agent'][1], patient, event['patient'][1], sentence]
-        else:
-            eventInfo = [str(file), query, 'E' + str(evIndex - 1), event["trigger"], event["frame"], event["FrameNetFr"], event['location'],
-                     event['temporal'], agent, event['agent'][1], patient, event['patient'][1], sentence]
         writer.writeRow('Events', eventInfo)
         ##Model RST currently based only on Events. Being able to bring Entities in front???
         ###Or maybe include this portion as the merged Deep Learning Architecture?
@@ -132,7 +130,9 @@ def writeSentence(file, index, writer, eventReader, data, query, scoring= False)
         cause = relation["cause"]
         effect = relation["effect"]
         relType = relation['type']
-        causalInfo = [str(file), query, 'R' + str(relIndex - 1), relation["trigger"], relType,
+        score = query_finder.rankNode((eventScores, cause[0], effect[0]), 'relation')
+        #score= 1.0
+        causalInfo = [str(file), query, str(score), 'R' + str(relIndex - 1), relation["trigger"], relType, str(scores),
                       cause[0], cause[1], effect[0], effect[1], sentence]
         writer.writeRow("Causal", causalInfo)
     return writer

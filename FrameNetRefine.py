@@ -137,7 +137,7 @@ class FrameNetRefiner:
             if (frame in self.frames) and (frame not in self.Causal):
                 eventFrames.append(frame)
         if len(eventFrames)>0:
-            return True, str(eventFrames), "event1"
+            return True, eventFrames, "event1"
         return False, "", ""
 
     def getPos(self, posTag):

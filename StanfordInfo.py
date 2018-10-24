@@ -75,6 +75,8 @@ class DataExtractor:
             s= line.split('(')
             head= str(s[1]).strip(' ')
             if head== 'NP' and ')' in line:
+                if len(s) < 4 and 'DT' in line:
+                    continue
                 phrase=""
                 for item in s[2:]:
                     w = item.strip(') ').split(' ')[1]

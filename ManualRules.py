@@ -194,7 +194,7 @@ class CandidateEvents:
             booleanH2, frameH2, category2 = self.frRefiner.refineWord(sentence, lemmaH, 'NN')
             if len(item['eventuality'])>0:
                 frameH2 = self.frRefiner.getFrames(lemmaH, 'NN')
-                entities[span]= {'text':item['text'], 'trigger': item['token'], 'frame': frameH, 'FrameNetFr': str(frameH2), 'qualifier': item['qualifier']}
+                entities[span]= {'text':item['text'], 'trigger': item['token'], 'frame': frameH, 'FrameNetFr': frameH2, 'qualifier': item['qualifier']}
                 event = item['eventuality']
                 lemma= event['lemma']
                 boolean, frame, category = self.refiner.refineWord(sentence, lemma, 'VBG')
@@ -214,7 +214,7 @@ class CandidateEvents:
                     events[span] = {'trigger': item['text'], 'frame': frameH, 'FrameNetFr': frameH2, 'location': data['location'], 'temporal': data['temporal'], 'patient': (0, ""), 'agent':(0, "")}
             else:
                 frameH2= self.frRefiner.getFrames(lemmaH, 'NN')
-                entities[span] = {'text':item['text'],'trigger': item['token'], 'frame': frameH, 'FrameNetFr': str(frameH2), 'qualifier': item['qualifier']}
+                entities[span] = {'text':item['text'],'trigger': item['token'], 'frame': frameH, 'FrameNetFr': frameH2, 'qualifier': item['qualifier']}
         return events2, events, entities
 
     def nominalEvents(self, sentence, candidateEvents):

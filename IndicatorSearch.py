@@ -9,6 +9,7 @@ class IndicatorSearch:
         self.file= file
         self.dir= dir
         self.query= query
+        self.reportFrames=['Communication', 'Text_creation', 'Statement', 'Warning' , 'Indicating', 'Cogitation']
         # self.Ontology= Ontology(dir)
         # self.indicators= self.Ontology.indicatorsWorldBank
         #self.indicators= indicators
@@ -18,6 +19,8 @@ class IndicatorSearch:
         #i_extractor= CandidateEvents(file, self.dir)
         i_extractor= DataExtractor(self.file, self.dir)
         sentences= i_extractor.sentences
+        if self.query=='':
+            return sentences
         for s in range(len(sentences)):
             #sentence= i_extractor.getSentence(s)
             sentence= sentences[s]
@@ -34,3 +37,40 @@ class IndicatorSearch:
                 #sentences_index.append(s)
                 targets.append(s)
         return targets
+
+    def rankNode(self, node, type):
+        score=0.0
+        if type== 'entity' or type== 'event':
+            if node['FrameNetFr']=='':
+                pass
+            elif len(set(node['FrameNetFr']).intersection(set(self.reportFrames)))>0:
+                score+= 5
+            else:
+                score+= 15
+            if node['frame']!= '':
+                score+= 25
+            if node['trigger'] == self.query:
+                score+= 60
+            elif self.query in node['trigger']:
+                score+= 40
+            else:
+                score+= 10
+            return score/100.0
+        eventScores, causes, effects= node
+        cScore= 0.
+        eScore=0.
+        causes= causes.split(', ')
+        effects = effects.split(', ')
+        print effects
+        print causes
+        for i in causes:
+            if eventScores[i]>cScore:
+                cScore= eventScores[i]
+        for i in effects:
+            if eventScores[i]>eScore:
+                eScore= eventScores[i]
+        return eScore * cScore
+
+
+
+

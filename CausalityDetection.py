@@ -13,6 +13,7 @@ class RSTModel:
         self.localIndex= eventLocalIndex
         self.entities= entities
         self.entityIndex= entityLocalIndex
+        self.reportFrames = ['Communication', 'Text_creation', 'Statement', 'Warning', 'Indicating', 'Cogitation']
         #self.events= self.format(events, eventLocalIndex)
 
     def format(self, keys, entities=False):
@@ -82,6 +83,7 @@ class RSTModel:
 
     ##If Effect/Cause are empty, return no relation
     ##Fix model by searching more Events from previous module, given that there is a hard Relations (Aka hard Causal Trigger)
+
     def getCausalNodes(self, entityReplacement=False):
         ##Use also Entities as potential nodes, in case that we cannot locate an Event as cause/effect
         causality=[]
@@ -145,27 +147,30 @@ class RSTModel:
         for k in keys:
             event = self.events[k]
             index = self.sentence.index(event['trigger'])
+            if len(set(event['FrameNetFr']).intersection(set(self.reportFrames))) >0:
+                continue
             if index>bound['prev'] and index<bound['next']:
                 if index<bound['curr']:
                     list1.append(k)
                 elif index>bound['curr']:
                     list2.append(k)
-        if len(list1)==0:
-            for k in self.entities.keys():
-                entity = self.entities[k]
-                index = self.sentence.index(entity['text'])
-                if index > bound['prev'] and index < bound['next']:
-                    if index < bound['curr']:
-                        list1.append(k)
-        if len(list2)==0:
-            for k in self.entities.keys():
-                entity = self.entities[k]
-                index = self.sentence.index(entity['text'])
-                if index > bound['prev'] and index < bound['next']:
-                    if index > bound['curr']:
-                        list2.append(k)
+        # if len(list1)==0:
+        #     for k in self.entities.keys():
+        #         entity = self.entities[k]
+        #         index = self.sentence.index(entity['text'])
+        #         if index > bound['prev'] and index < bound['next']:
+        #             if index < bound['curr']:
+        #                 list1.append(k)
+        # if len(list2)==0:
+        #     for k in self.entities.keys():
+        #         entity = self.entities[k]
+        #         index = self.sentence.index(entity['text'])
+        #         if index > bound['prev'] and index < bound['next']:
+        #             if index > bound['curr']:
+        #                 list2.append(k)
         if direction=='left':
             return list1, list2
+        print list2, list1
         return list2, list1
 
 
