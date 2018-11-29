@@ -1,13 +1,14 @@
 import ast
 import string
+import os
 
 class Ontology:
 
     def __init__(self, dir):
-        self.dir= dir
-        self.file = '/OntologyFiles/Ontology_v2.txt'
+        self.dir= os.path.dirname(os.getcwd())
+        self.file = '/Ontology_v2.txt'
         self.ontology= self.getOntologyManualData()
-        self.indicatorsWorldBank= self.getIndexes('/OntologyFiles/Indicators_WorldBank_Full.txt')
+        self.indicatorsWorldBank= self.getIndexes('/Indicators_WorldBank_Full.txt')
         #data2= self.getOntologyAutoData()
 
 

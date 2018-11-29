@@ -84,7 +84,7 @@ def writeQueryBasedOutput(files, queryList):
             query_sentences= query_finder.findQuery()
             for index in query_sentences:
                 writer= writeSentence(file, index, writer, eventReader, data, query, query_finder, False)
-    writer.saveExcelFile(project, 'output/' + dataDir+ '_Query_search.v6.xlsx')
+    writer.saveExcelFile(project, 'output/' + dataDir+ '_Query_search.v7.xlsx')
 
 def writeSentence(file, index, writer, eventReader, data, query, query_finder, scoring= False):
     #allEvents2, allEvents, allEntities = data
@@ -162,7 +162,7 @@ def writeSentence(file, index, writer, eventReader, data, query, query_finder, s
         writer.writeRow('Events', eventInfo)
     #TODO: Fix the Causality Model
     #It currently chooses ALL the events. This is wrong, it should choose the ones that do not contain others as arguments
-    
+
     rst = RSTModel(events, eventLocalIndex, entities, entLocalIndex, sentence, lemmas, pos)
     causalRel = rst.getCausalNodes()  ### OR TRUE
     for relation in causalRel:
@@ -230,4 +230,5 @@ query1= ['food security', 'malnutrition', 'starvation', 'famine', 'mortality', '
 query2=['health', 'malnutrition', 'food security', 'drought', 'rainfall', 'food']
 #query= ['health', 'malnutrition', 'rainfall' ,'food production', 'food availability', 'food security', 'food imports', 'food aid', 'crop yield', 'drought', 'poverty', 'famine']
 query= ['malnutrition', 'famine' ,'food production', 'food availability', 'food security', 'food imports', 'food aid', 'crop yield', 'poverty']
+query=['drought', 'flood', 'livestock', 'rainfall', 'conflict', 'displacement', 'crop harvest', 'food production', 'food availability', 'food security', 'community', 'economy', 'currency value', 'crop yield', 'market function', 'poverty', 'political instability']
 runSOFIA(query)
