@@ -84,7 +84,7 @@ def writeQueryBasedOutput(files, queryList):
             query_sentences= query_finder.findQuery()
             for index in query_sentences:
                 writer= writeSentence(file, index, writer, eventReader, data, query, query_finder, False)
-    writer.saveExcelFile(project, 'output/' + dataDir+ '_Query_search.v7.xlsx')
+    writer.saveExcelFile(project, 'output/' + dataDir+ '_Query_search.v8.xlsx')
 
 def writeSentence(file, index, writer, eventReader, data, query, query_finder, scoring= False):
     #allEvents2, allEvents, allEntities = data

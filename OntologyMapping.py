@@ -5,7 +5,8 @@ import os
 class Ontology:
 
     def __init__(self, dir):
-        self.dir= os.path.dirname(os.getcwd())
+        #self.dir= os.path.dirname(os.getcwd())
+        self.dir= os.getcwd()
         self.file = '/Ontology_v2.txt'
         self.ontology= self.getOntologyManualData()
         self.indicatorsWorldBank= self.getIndexes('/Indicators_WorldBank_Full.txt')

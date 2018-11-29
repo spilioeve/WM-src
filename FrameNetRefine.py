@@ -11,6 +11,7 @@ class FrameNetRefiner:
         #word has to be Lemma
         #Pos has to be V or N
         self.dir = os.path.dirname(os.getcwd())
+        self.dir= os.getcwd()
         self.verbTags=["VB", "VBP", "VBD", "VBZ", "VBN", "VBG"] #VBN and VBG maybe?
         self.nounTags= ["NN", "NNS", "NNP", "NNPS"]
         self.adjTags= ['JJ', 'JJR', 'JJS']
