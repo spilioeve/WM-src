@@ -25,12 +25,13 @@ def writeOutput(files):
         #data = odinData(file)
         print "Analyzing File"
         print file
+        print files.index(file)
         eventReader = CandidateEvents(file, project)
         numSentences = eventReader.dataSize()
         data = eventReader.getEvents_Entities()
         for index in range(numSentences):
-            writer= writeSentence(file, index, writer, eventReader, data, 'None', 'None', scoring= True)
-    writer.saveExcelFile(project, 'output/'+ dataDir + 'v10.xlsx')
+            writer= writeSentence(file, index, writer, eventReader, data, 'None', 'None', scoring= False)
+    writer.saveExcelFile(project, 'output/'+ dataDir + '_v2.xlsx')
     # for file in files:
     #     data= odinData(file)
     #     eventReader= CandidateEvents(file, dir)
@@ -75,17 +76,19 @@ def writeQueryBasedOutput(files, queryList):
     for file in files:
         print "Analyzing File"
         print file
+        print files.index(file)
         eventReader = CandidateEvents(file, project)
         for query in queryList:
             query_finder= IndicatorSearch(file, project, query)
             data = eventReader.getEvents_Entities()
             query_sentences= query_finder.findQuery()
             for index in query_sentences:
-                writer= writeSentence(file, index, writer, eventReader, data, query, query_finder, True)
-    writer.saveExcelFile(project, 'output/' + 'Query_search.v4.xlsx')
+                writer= writeSentence(file, index, writer, eventReader, data, query, query_finder, False)
+    writer.saveExcelFile(project, 'output/' + dataDir+ '_Query_search.v6.xlsx')
 
 def writeSentence(file, index, writer, eventReader, data, query, query_finder, scoring= False):
-    allEvents2, allEvents, allEntities = data
+    #allEvents2, allEvents, allEntities = data
+    allEvents, allEntities = data
     sentence = eventReader.getSentence(index)
     ontologyMapper = Ontology(project)
     scores=''
@@ -97,24 +100,33 @@ def writeSentence(file, index, writer, eventReader, data, query, query_finder, s
     entLocalIndex = {}
     entities = allEntities[index]
     events = allEvents[index]
+    
     for span in entities.keys():
         entity = entities[span]
         entIndex = writer.getIndex('Entities')
         entLocalIndex[span] = 'N' + str(entIndex - 1)
         #scores = ontologyMapper.stringMatching(entity["trigger"], 'WorldBank')
-        score= query_finder.rankNode(entity, 'entity')
+        score=0.0
+        if query_finder!= 'None':
+            score= query_finder.rankNode(entity, 'entity', sentence)
         entInfo = [str(file), query, str(score), 'N' + str(entIndex - 1), string.lower(entity["trigger"]), entity["frame"],
                    str(entity["FrameNetFr"]), str(scores), string.lower(entity['qualifier']), sentence]
         writer.writeRow('Entities', entInfo)
     eventLocalIndex = {}
     eventScores={}
+    event2Spans=[]
     for span in events.keys():
         event = events[span]
+        if 'event2' in event['frame']:
+            event2Spans.append(span)
+            continue
         evIndex = writer.getIndex("Events")
         eventLocalIndex[span] = 'E' + str(evIndex - 1)
         patient = writer.getIndexFromSpan(entLocalIndex, event['patient'][0])
         agent = writer.getIndexFromSpan(entLocalIndex, event['agent'][0])
-        score = query_finder.rankNode(event, 'event')
+        score = 0.0
+        if query_finder != 'None':
+            score = query_finder.rankNode(event, 'event', sentence)
         eventScores['E' + str(evIndex - 1)] = score
 
         eventInfo = [str(file), query, str(score), 'E' + str(evIndex - 1), event["trigger"], event["frame"], str(event["FrameNetFr"]), str(scores), event['location'],
@@ -123,6 +135,34 @@ def writeSentence(file, index, writer, eventReader, data, query, query_finder, s
         ##Model RST currently based only on Events. Being able to bring Entities in front???
         ###Or maybe include this portion as the merged Deep Learning Architecture?
         ###Merged with Coreference & Temporal Seq???
+    for span in event2Spans:
+        event = events[span]
+        evIndex = writer.getIndex("Events")
+        eventLocalIndex[span] = 'E' + str(evIndex - 1)
+        try:
+            patient = writer.getIndexFromSpan(eventLocalIndex, event['patient'][0])
+        except:
+            try:
+                patient= writer.getIndexFromSpan(entLocalIndex, event['patient'][0])
+            except:
+                patient=''
+        try:
+            agent = writer.getIndexFromSpan(eventLocalIndex, event['agent'][0])
+        except:
+            try:
+                agent= writer.getIndexFromSpan(entLocalIndex, event['agent'][0])
+            except:
+                agent=''
+        score = 0.0
+        if query_finder != 'None':
+            score = query_finder.rankNode(event, 'event', sentence)
+        eventScores['E' + str(evIndex - 1)] = score
+        eventInfo = [str(file), query, str(score), 'E' + str(evIndex - 1), event["trigger"], event["frame"], str(event["FrameNetFr"]), str(scores), event['location'],
+                         event['temporal'], agent, event['agent'][1], patient, event['patient'][1], sentence]
+        writer.writeRow('Events', eventInfo)
+    #TODO: Fix the Causality Model
+    #It currently chooses ALL the events. This is wrong, it should choose the ones that do not contain others as arguments
+    
     rst = RSTModel(events, eventLocalIndex, entities, entLocalIndex, sentence, lemmas, pos)
     causalRel = rst.getCausalNodes()  ### OR TRUE
     for relation in causalRel:
@@ -130,8 +170,9 @@ def writeSentence(file, index, writer, eventReader, data, query, query_finder, s
         cause = relation["cause"]
         effect = relation["effect"]
         relType = relation['type']
-        score = query_finder.rankNode((eventScores, cause[0], effect[0]), 'relation')
-        #score= 1.0
+        score = 0.0
+        if query_finder != 'None':
+            score = query_finder.rankNode((eventScores, cause[0], effect[0]), 'relation', sentence)
         causalInfo = [str(file), query, str(score), 'R' + str(relIndex - 1), relation["trigger"], relType, str(scores),
                       cause[0], cause[1], effect[0], effect[1], sentence]
         writer.writeRow("Causal", causalInfo)
@@ -142,6 +183,7 @@ def getOutputOnline(sentence):
     inputF= open('userInput', 'w')
     inputF.write(sentence)
     inputF.close()
+    ##For stanford CoreNLP it is '-filelist ...' NOT '-fileList ..'
     command= 'java -cp "*" edu.stanford.nlp.pipeline.StanfordCoreNLP -annotators tokenize,ssplit,pos,parse,lemma,ner,depparse -file userInput'+ ' -outputDirectory '+ project+ '/outputStanford' + ' -outputFormat \'json\''
     os.system(command)
     os.chdir(path)
@@ -162,7 +204,7 @@ def odinData(file):
 
 
 
-dataDir='MITRE_June18'
+dataDir='MITRE_AnnualEval'
 #dataDir='proposal_doc'
 projectName= '/South_Sudan_Famine'
 path = os.getcwd()
@@ -176,12 +218,16 @@ def runSOFIA(query):
     if '.DS_Store' in files:
         files= files[:files.index('.DS_Store')]+ files[files.index('.DS_Store')+1:]
     #writeOutput(files)
-    files+= ['IPC_Annex_Indicators', 'Food_security' ]
+    #files+= ['IPC_Annex_Indicators', 'Food_security' ]
+    #files=['MONTHLY_PRICE_WATCH_AND_ANNEX_AUGUST2014_1', 'Global Weather Hazard-150305']
     writeQueryBasedOutput(files, query)
 
 
 
-sentence="The intense rain caused flooding in the area."
+#sentence="The intense rain caused flooding in the area."
 #getOutputOnline(sentence)
-query= ['food security', 'malnutrition', 'starvation', 'famine', 'mortality', 'die', 'conflict', 'IPC phase']
+query1= ['food security', 'malnutrition', 'starvation', 'famine', 'mortality', 'die', 'conflict', 'IPC phase']
+query2=['health', 'malnutrition', 'food security', 'drought', 'rainfall', 'food']
+#query= ['health', 'malnutrition', 'rainfall' ,'food production', 'food availability', 'food security', 'food imports', 'food aid', 'crop yield', 'drought', 'poverty', 'famine']
+query= ['malnutrition', 'famine' ,'food production', 'food availability', 'food security', 'food imports', 'food aid', 'crop yield', 'poverty']
 runSOFIA(query)

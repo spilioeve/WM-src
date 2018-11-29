@@ -3,6 +3,7 @@ import os
 from openpyxl import Workbook
 import string
 from bs4 import BeautifulSoup
+import enchant
 
 class Quantifiers:
     def __init__(self, quantifiers, entities, sentence):
@@ -90,6 +91,7 @@ class FileReader:
 
     def __init__(self, dataDir='None'):
         self.dir = os.path.dirname(os.getcwd())+'/data/'
+        self.d=  enchant.Dict("en_US")
         if dataDir != 'None':
             self.dir= dataDir+ '/dataFiles/'
 
@@ -103,25 +105,106 @@ class FileReader:
         f.close()
 
     def cleanText(self, text):
-        sentences= text.split('.')
-        newText=""
+        sentences = text.split('\n')
+        newText = ""
         for s in sentences:
-            s= s.strip('\n')
-            s= s.strip(' ')
-            newSent= self.textToAscii(s)
-            if len(newSent.split(' '))> 5:
-                newText+= newSent+'.\n'
+            s = s.strip('\n')
+            s = s.strip(' ')
+            newSent = self.textToAscii(s)
+            if len(newSent.split(' ')) > 25:
+                if '\n' in newSent:
+                    i = newSent.index('\n')
+                    newText += newSent[:i] + '. ' + newSent[i:]
+            elif len(newSent.split(' ')) > 4:
+                newText += newSent + '\n'
         return newText
 
     def textToAscii(self, input):
-        newText=''
+        newText = ''
         for letter in input:
-            if ord(letter)<128:
-                if letter=='\n':
-                    newText+= ' '
+            if ord(letter) < 128:
+                if letter == '\n':
+                    newText += ' '
                 else:
-                    newText+= letter
-        return newText
+                    newText += letter
+        words = newText.split(' ')
+        newWords = []
+        for w in words:
+            if len(w) > 10:
+                if self.d.check(w):
+                    newWords.append(w)
+            else:
+                newWords.append(w)
+        return string.join(newWords, ' ')
+
+    def removeAnnotations(self, text, limitLeft, limitRight):
+        annotationSpans={}
+        newText= ''
+        i=0
+        new_i=0
+        while i< len(text):
+            currLetter= text[i]
+            if limitLeft== currLetter:
+                currAnnotation=currLetter
+                loop= True
+                loop2 = True
+                start=0
+                end=1
+                while loop:
+                    i += 1
+                    #new_i+=1
+                    currLetter = text[i]
+                    currAnnotation+= currLetter
+                    if limitRight== currLetter and loop2:
+                        i+=1
+                        #new_i += 1
+                        currLetter = text[i]
+                        currAnnotation += currLetter
+                        start = new_i
+                        while loop2:
+                            if limitLeft== currLetter:
+                                loop2=False
+                                end= new_i
+                                new_i-=1
+                            else:
+                                newText += currLetter
+                                i += 1
+                                new_i += 1
+                                currLetter = text[i]
+                                currAnnotation += currLetter
+                    elif limitRight== currLetter:
+                        #i += 1
+                        # currLetter = text[i]
+                        # currAnnotation += currLetter
+                        loop= False
+                        annotationSpans[(start, end)] = currAnnotation
+            else:
+                newText+= currLetter
+            i += 1
+            new_i += 1
+        return newText, annotationSpans
+
+    def run(self, files):
+        for file in files:
+            print file
+            f=open(file)
+            text_i= f.read()
+            f.close()
+            index = text_i.index('<MAKEINSTANCE')
+            text_i=text_i[:index]
+            newT, spans = self.removeAnnotations(' ', text_i, '<', '>')
+            f = open('/Users/evangeliaspiliopoulou/Desktop/Structured_Learner/JointModel/data/TimebankDense/Annotations/' + file[:-4], 'w')
+            k = spans.keys()
+            k.sort()
+            for key in k:
+                item = spans[key]
+                if len(item) > 1:
+                    if '\n' in item:
+                        i = item.index('\n')
+                        item = item[:i] + item[i + 1:]
+                    f.write(str(item) + '\t' + str(key) + '\n')
+            f.close()
+
 
     def readXmlFile(self, file):
         f = open(self.dir + file)

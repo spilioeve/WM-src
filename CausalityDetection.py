@@ -170,7 +170,6 @@ class RSTModel:
         #                 list2.append(k)
         if direction=='left':
             return list1, list2
-        print list2, list1
         return list2, list1
 
 

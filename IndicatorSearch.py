@@ -2,6 +2,7 @@ from StanfordInfo import DataExtractor
 # from ManualRules import CandidateEvents
 # from OntologyMapping import Ontology
 # from CausalityDetection import RSTModel
+import wikipedia
 
 class IndicatorSearch:
 
@@ -38,9 +39,21 @@ class IndicatorSearch:
                 targets.append(s)
         return targets
 
-    def rankNode(self, node, type):
+    def rankNode(self, node, type, sentence):
         score=0.0
+        l= len(sentence.split(' '))
+        if l < 10:
+            score+= 20
+        elif l<15:
+            score+= 15
+        elif l< 20:
+            score +=10
         if type== 'entity' or type== 'event':
+            ##Too slow so had to delete that!!!
+            # try:
+            #     wiki = wikipedia.search(node['trigger'])
+            # except:
+            #     wiki=[]
             if node['FrameNetFr']=='':
                 pass
             elif len(set(node['FrameNetFr']).intersection(set(self.reportFrames)))>0:
@@ -50,19 +63,19 @@ class IndicatorSearch:
             if node['frame']!= '':
                 score+= 25
             if node['trigger'] == self.query:
-                score+= 60
+                score+= 40
             elif self.query in node['trigger']:
                 score+= 40
             else:
                 score+= 10
+            # if len(wiki)>0:
+            #     score+= 20
             return score/100.0
         eventScores, causes, effects= node
         cScore= 0.
         eScore=0.
         causes= causes.split(', ')
         effects = effects.split(', ')
-        print effects
-        print causes
         for i in causes:
             if eventScores[i]>cScore:
                 cScore= eventScores[i]

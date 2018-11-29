@@ -82,10 +82,10 @@ class Ontology:
         events1, events2, entities= self.ontology['events1'], self.ontology['events2'], self.ontology['entities']
         for type in events1.keys():
             if lemma in events1[type]:
-                return True, type, 'event1'
+                return True, 'event1/'+type, 'event1'
         for type in events2.keys():
             if lemma in events2[type]:
-                return True, type, 'event2'
+                return True, 'event2/'+type, 'event2'
         for type in entities.keys():
             if lemma in entities[type]:
                 return False, type, 'entity'

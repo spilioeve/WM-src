@@ -84,7 +84,9 @@ class CandidateEvents:
         for span in sentenceEvents2.keys():
             #pdb.set_trace()
             index=sentenceEvents2[span]['index']
-            srlOut = self.getDependencies(sentenceIndex, index + 1, sentenceEvents)
+            mapped=dict(entities)
+            mapped.update(sentenceEvents)
+            srlOut = self.getDependencies(sentenceIndex, index + 1, mapped)
             sentenceEvents2[span].update(srlOut)
         return sentenceEvents2, sentenceEvents
 
@@ -120,10 +122,12 @@ class CandidateEvents:
         for index in range(self.stanfordLoader.getDataSize()):
             events2, events, entities = self.classifyNominals(index)
             events2, events= self.getVerbEvents(index, events2, events, entities)
-            allEvents2.append(events2)
+            #allEvents2.append(events2)
+            events.update(events2)
             allEvents.append(events)
+            #allEvents.append(events2)
             allEntities.append(entities)
-        return allEvents2, allEvents, allEntities
+        return allEvents, allEntities
 
     def getDependencies(self, sentenceIndex, index, entities):
         deps= self.stanfordLoader.getDependencies(sentenceIndex)
