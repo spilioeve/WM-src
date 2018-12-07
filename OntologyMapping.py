@@ -4,7 +4,7 @@ import os
 
 class Ontology:
 
-    def __init__(self, dir):
+    def __init__(self):
         #self.dir= os.path.dirname(os.getcwd())
         self.dir= os.getcwd()
         self.file = '/Ontology_v2.txt'

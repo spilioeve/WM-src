@@ -9,37 +9,42 @@ import string
 from openpyxl import Workbook
 import pdb
 import corenlp
+import pandas as pd
 
 class SOFIA:
     """SOFIA class. Can be invoked with:
        
        ```
-       sofia = SOFIA(dataDir='data_path', ProjectName='/path_to_project', CoreNLP='/path_to_CoreNLP')
-       sentence="The intense rain caused flooding in the area."
-       sofia.getOutputOnline(sentence)
+       sofia = sofia = SOFIA(CoreNLP='path_to_CoreNLP')
+       sentence="The intense rain caused flooding in the area. This has harmed the local populace."
+       results = sofia.getOutputOnline(sentence) 
+       sofia.results2excel('output.xlsx',results)
        ```
+       
+       In this example, results is an array of JSON objects (one per sentence submitted to SOFIA).
+       The final line writes this output to an Excel file at the user specified path.
     """
 
-    def __init__(self, dataDir, ProjectName, CoreNLP):
-        self.dataDir = dataDir
-        self.projectName = ProjectName
-        self.path = os.getcwd()
-        self.project = os.path.dirname(self.path) + self.projectName
-        self.corenlp = CoreNLP
+    def __init__(self, CoreNLP):
         self.causalHeaders = ["Source_File", 'Query', "Score", "Relation Index", "Relation", "Relation_Type", "Indicator", "Cause Index", "Cause", "Effect Index", "Effect", "Sentence"]
         self.eventHeaders = ["Source_File", 'Query', "Score", "Event Index", "Relation", "Event_Type", "FrameNet_Frame", "Indicator", "Location", "Time", 'Agent Index', "Agent", 'Patient Index', "Patient", "Sentence"]
         self.entityHeaders = ["Source_File", 'Query', "Score", "Entity Index", "Entity", "Entity_Type", "FrameNet_Frame", "Indicator", "Qualifier", "Sentence"]
-        self.variableHeaders = ["Source_File", 'Sentence', 'Indicator', 'Index']        
-        os.environ['CORENLP_HOME'] = self.corenlp
+        self.variableHeaders = ["Source_File", 'Sentence', 'Indicator', 'Scoring', 'Index']        
+        self.entityIndex = 0
+        self.eventIndex = 0
+        self.variableIndex = 0
+        self.causalIndex = 0
+        os.environ['CORENLP_HOME'] = CoreNLP
         self.CoreNLPclient = corenlp.CoreNLPClient(annotators=['tokenize', 
-                                       'ssplit', 
-                                       'pos', 
-                                       'parse', 
-                                       'lemma', 
-                                       'ner', 
-                                       'depparse'])
+                                                               'ssplit', 
+                                                               'pos', 
+                                                               'parse', 
+                                                               'lemma', 
+                                                               'ner', 
+                                                               'depparse'])
 
-    def writeOutput(self, annotations):
+
+    def writeOutput(self, annotations, scoring = False):
         writer= ExcelWriter(['Causal', 'Events', 'Entities', 'Variables'])
         output = []
         file = 'userinput'
@@ -48,7 +53,7 @@ class SOFIA:
         data = eventReader.getEvents_Entities()
         self.eventReader = eventReader
         for index in range(numSentences):
-            sentence_output = self.writeSentence(file, index, writer, eventReader, data, 'None', 'None', scoring= False)
+            sentence_output = self.writeSentence(file, index, writer, eventReader, data, 'None', 'None', scoring = scoring)
             output.append(sentence_output)
         return output
 
@@ -67,16 +72,18 @@ class SOFIA:
                 output.append(sentence_output)
         return output
 
-    def writeSentence(self, file, index, writer, eventReader, data, query, query_finder, scoring= False):
+    def writeSentence(self, file, index, writer, eventReader, data, query, query_finder, scoring = False):
         #allEvents2, allEvents, allEntities = data
         output = {}
         allEvents, allEntities = data
         sentence = eventReader.getSentence(index)
-        ontologyMapper = Ontology(self.project)
+        ontologyMapper = Ontology()
+        self.variableIndex += 1
+        varIndex = 'V{}'.format(self.variableIndex)
         scores=''
         if scoring:
             scores = ontologyMapper.stringMatching(sentence, 'WorldBank')
-            output['Variables'] = dict(zip(self.variableHeaders, [str(file), query, sentence, str(scores)]))
+        output['Variables'] = dict(zip(self.variableHeaders, [str(file), sentence, query, str(scores), varIndex]))
         lemmas = eventReader.getSentenceLemmas(index)
         pos = eventReader.getSentencePOSTags(index)
         entLocalIndex = {}
@@ -85,35 +92,36 @@ class SOFIA:
 
         output['Entities'] = []
         for span in list(entities.keys()):
+            self.entityIndex += 1
+            entIndex = 'N{}'.format(self.entityIndex)
             entity = entities[span]
-            entIndex = writer.getIndex('Entities')
-            entLocalIndex[span] = 'N' + str(entIndex - 1)
             #scores = ontologyMapper.stringMatching(entity["trigger"], 'WorldBank')
             score=0.0
             if query_finder!= 'None':
                 score= query_finder.rankNode(entity, 'entity', sentence)
-            entInfo = [str(file), query, str(score), 'N' + str(entIndex - 1), entity["trigger"].lower(), entity["frame"],
+            entInfo = [str(file), query, str(score), entIndex, entity["trigger"].lower(), entity["frame"],
                        str(entity["FrameNetFr"]), str(scores), entity['qualifier'].lower(), sentence]
             output['Entities'].append(dict(zip(self.entityHeaders,entInfo)))
         eventLocalIndex = {}
         eventScores={}
         event2Spans=[]
         output['Events'] = []
+
         for span in list(events.keys()):
             event = events[span]
+            self.eventIndex += 1
+            evIndex = 'E{}'.format(self.eventIndex)
             if 'event2' in event['frame']:
-                event2Spans.append(span)
+                event2Spans.append(span)               
                 continue
-            evIndex = writer.getIndex("Events")
-            eventLocalIndex[span] = 'E' + str(evIndex - 1)
             patient = writer.getIndexFromSpan(entLocalIndex, event['patient'][0])
             agent = writer.getIndexFromSpan(entLocalIndex, event['agent'][0])
             score = 0.0
             if query_finder != 'None':
                 score = query_finder.rankNode(event, 'event', sentence)
-            eventScores['E' + str(evIndex - 1)] = score
+            eventScores[evIndex] = score
 
-            eventInfo = [str(file), query, str(score), 'E' + str(evIndex - 1), event["trigger"], event["frame"], str(event["FrameNetFr"]), str(scores), event['location'],
+            eventInfo = [str(file), query, str(score), evIndex, event["trigger"], event["frame"], str(event["FrameNetFr"]), str(scores), event['location'],
                              event['temporal'], agent, event['agent'][1], patient, event['patient'][1], sentence]
             output['Events'].append(dict(zip(self.eventHeaders,eventInfo)))
             ##Model RST currently based only on Events. Being able to bring Entities in front???
@@ -121,8 +129,9 @@ class SOFIA:
             ###Merged with Coreference & Temporal Seq???
         for span in event2Spans:
             event = events[span]
-            evIndex = writer.getIndex("Events")
-            eventLocalIndex[span] = 'E' + str(evIndex - 1)
+            self.eventIndex += 1
+            evIndex = 'E{}'.format(self.eventIndex)
+            eventLocalIndex[span] = evIndex
             try:
                 patient = writer.getIndexFromSpan(eventLocalIndex, event['patient'][0])
             except:
@@ -151,25 +160,30 @@ class SOFIA:
         causalRel = rst.getCausalNodes()  ### OR TRUE
         output['Causal'] = []
         for relation in causalRel:
-            relIndex = writer.getIndex("Causal")
+            self.causalIndex += 1
+            cauIndex = 'R{}'.format(self.causalIndex)
             cause = relation["cause"]
             effect = relation["effect"]
             relType = relation['type']
             score = 0.0
             if query_finder != 'None':
                 score = query_finder.rankNode((eventScores, cause[0], effect[0]), 'relation', sentence)
-            causalInfo = [str(file), query, str(score), 'R' + str(relIndex - 1), relation["trigger"], relType, str(scores),
+            causalInfo = [str(file), query, str(score), cauIndex, relation["trigger"], relType, str(scores),
                           cause[0], cause[1], effect[0], effect[1], sentence]
             output['Causal'].append(dict(zip(self.causalHeaders,causalInfo)))
         return output
 
-    def getOutputOnline(self, text):
+    def getOutputOnline(self, text, scoring = False):
         annotations = self.annotate(text)
-        output = self.writeOutput(annotations)
+        output = self.writeOutput(annotations, scoring = scoring)
         return output
     
     def annotate(self, text):
         annotations = self.CoreNLPclient.annotate(text, output_format='json')
+        self.entityIndex = 0
+        self.eventIndex = 0
+        self.variableIndex = 0
+        self.causalIndex = 0
         return annotations
 
     def odinData(self, file):
@@ -192,3 +206,29 @@ class SOFIA:
         #files+= ['IPC_Annex_Indicators', 'Food_security' ]
         #files=['MONTHLY_PRICE_WATCH_AND_ANNEX_AUGUST2014_1', 'Global Weather Hazard-150305']
         writeQueryBasedOutput(files, query)
+        
+    def flatten(self, l):
+        return [item for sublist in l for item in sublist]
+    
+    def results2excel(self, output_path, results):
+        variables = [i['Variables'] for i in results]
+        entities = self.flatten([i['Entities'] for i in results])
+        events = self.flatten([i['Events'] for i in results])
+        causal = self.flatten([i['Causal'] for i in results])
+
+        variables_df = pd.DataFrame(variables)
+        entities_df = pd.DataFrame(entities)
+        events_df = pd.DataFrame(events)
+        causal_df = pd.DataFrame(causal)
+
+        # Create a Pandas Excel writer using XlsxWriter as the engine.
+        writer = pd.ExcelWriter(output_path)
+
+        # Write each dataframe to a different worksheet.
+        variables_df.to_excel(writer, sheet_name='Variables')
+        entities_df.to_excel(writer, sheet_name='Entities')
+        events_df.to_excel(writer, sheet_name='Events')
+        causal_df.to_excel(writer, sheet_name='Causal')
+
+        # Close the Pandas Excel writer and output the Excel file.
+        writer.save()    

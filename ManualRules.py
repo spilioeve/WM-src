@@ -27,7 +27,7 @@ class CandidateEvents:
         self.stanfordLoader= DataExtractor(self.annotations)
         self.sentences= self.stanfordLoader.sentences
         if refiner== 'Ontology':
-            self.refiner = Ontology(dir)
+            self.refiner = Ontology()
         else:
             self.refiner = FrameNetRefiner()
         self.frRefiner= FrameNetRefiner()
