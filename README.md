@@ -24,8 +24,8 @@ Next, navigate to this SOFIA directory. Try:
 ```
 from main import SOFIA
 sofia = SOFIA(CoreNLP='/Users/brandon/stanford-corenlp-full-2018-10-05')
-sentence = '''The intense rain caused flooding in the area and in the capital. This was terrible news for the people of Pandonia. Conflict in the region is on the rise due to the floods. The floods are a direct result of rain and inadequate drainage.'''
-results = sofia.getOutputOnline(sentence)
+text = '''The intense rain caused flooding in the area and in the capital. This was terrible news for the people of Pandonia. Conflict in the region is on the rise due to the floods. The floods are a direct result of rain and inadequate drainage.'''
+results = sofia.getOutputOnline(text)
 sofia.results2excel('output.xlsx',results)
 ```
 
@@ -37,11 +37,42 @@ Additionally, query based reading can be performed with:
 
 ```
 query = ['food security', 'malnutrition', 'starvation', 'famine', 'mortality', 'die', 'conflict', 'IPC phase', 'flood']
-q_results = sofia.writeQueryBasedOutput(sentence, query)
+q_results = sofia.writeQueryBasedOutput(text, query)
 ```
 
 Where `q_results` is an array of JSON objects representing the results of query based reading. This can be written to Excel with:
 
 ```
 sofia.results2excel('q_output.xlsx', q_results)
+```
+
+# REST API
+A REST API built on Flask can be run by navigating to the SOFIA directory and running:
+
+```
+export FLASK_APP=REST_API.py
+flask run
+```
+
+This runs the API at `localhost:5000`. The API has two endpoints:
+
+1. `/process_text`: receives text and processes it using basic SOFIA processing
+2. `/process_query`: receives text and an array of queries and processes it using SOFIA's query based reading.
+
+Using the Python `requests` library, either endpoint can be hit using:
+
+```
+import requests
+url = 'http://localhost:5000'
+
+# process_text 
+obj = {'text': 'The intense rain caused flooding in the area and in the capital'}
+response = requests.post(url + '/process_text', json=obj)
+response.json()
+
+# process_query
+obj = {'text': 'The intense rain caused flooding in the area and in the capital',
+       'query': ['food security', 'malnutrition', 'starvation', 'famine', 'flood']}
+response = requests.post(url + '/process_query', json=obj)
+response.json()
 ```
