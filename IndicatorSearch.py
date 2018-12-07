@@ -6,8 +6,8 @@ import wikipedia
 
 class IndicatorSearch:
 
-    def __init__(self, file, dir, query):
-        self.file= file
+    def __init__(self, annotations, query):
+        self.annotations = annotations
         self.dir= dir
         self.query= query
         self.reportFrames=['Communication', 'Text_creation', 'Statement', 'Warning' , 'Indicating', 'Cogitation']
@@ -18,7 +18,7 @@ class IndicatorSearch:
     def findQuery(self):
         targets=[]
         #i_extractor= CandidateEvents(file, self.dir)
-        i_extractor= DataExtractor(self.file, self.dir)
+        i_extractor= DataExtractor(self.annotations)
         sentences= i_extractor.sentences
         if self.query=='':
             return sentences

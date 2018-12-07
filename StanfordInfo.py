@@ -4,17 +4,14 @@ import string
 verbTags=["VB", "VBP", "VBD", "VBZ", "VBN", "VBG"]
 
 class DataExtractor:
-    def __init__(self, file, dir):
-        self.file = file
-        self.dir = dir
+    def __init__(self, annotations):
+        self.annotations = annotations
         self.structuredData=[]
         self.sentences=[]
         self.getInfoStanford()
 
     def getInfoStanford(self):
-        jsonfile = open(self.dir + '/outputStanford/'+ self.file+ '.json', 'r')
-        jsonstr = jsonfile.read()
-        data = json.loads(jsonstr)
+        data = self.annotations
         for i in range(len(data['sentences'])):
             dep = data['sentences'][i]['enhancedPlusPlusDependencies']
             sentTokens= data['sentences'][i]['tokens']

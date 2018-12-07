@@ -22,10 +22,9 @@ nounTags= ["NN", "NNS", "NNP", "NNPS", "JJ"]
 
 class CandidateEvents:
 
-    def __init__(self, file, dir, refiner='Ontology'):
-        self.file= file
-        self.dir = dir
-        self.stanfordLoader= DataExtractor(file, dir)
+    def __init__(self, annotations, refiner='Ontology'):
+        self.annotations = annotations
+        self.stanfordLoader= DataExtractor(self.annotations)
         self.sentences= self.stanfordLoader.sentences
         if refiner== 'Ontology':
             self.refiner = Ontology(dir)
