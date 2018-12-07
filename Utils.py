@@ -73,7 +73,7 @@ class Quantifiers:
             else:
                 Dic[best]= [quant]
         matchDic={}
-        for entity in Dic.keys():
+        for entity in list(Dic.keys()):
             quants= Dic[entity]
             if len(quants)==1:
                 matchDic[entity]= quants[0]
@@ -186,7 +186,7 @@ class FileReader:
 
     def run(self, files):
         for file in files:
-            print file
+            print(file)
             f=open(file)
             text_i= f.read()
             f.close()
@@ -194,7 +194,7 @@ class FileReader:
             text_i=text_i[:index]
             newT, spans = self.removeAnnotations(' ', text_i, '<', '>')
             f = open('/Users/evangeliaspiliopoulou/Desktop/Structured_Learner/JointModel/data/TimebankDense/Annotations/' + file[:-4], 'w')
-            k = spans.keys()
+            k = list(spans.keys())
             k.sort()
             for key in k:
                 item = spans[key]
@@ -221,7 +221,7 @@ class FileReader:
 
     def sortDict(self, dict):
         dictList=[]
-        for key, value in sorted(dict.iteritems(), key=lambda (k, v): (v, k), reverse=True):
+        for key, value in sorted(iter(dict.items()), key=lambda k_v: (k_v[1], k_v[0]), reverse=True):
             dictList.append((key, value))
         return dictList
 
@@ -229,7 +229,7 @@ class FileReader:
         files= os.listdir(self.dir)
         for file in files:
             if file!= '.DS_Store' and file!= 'output':
-                print "processing file " + str(file)
+                print("processing file " + str(file))
                 if format== 'txt':
                     self.readFile(file)
 
@@ -237,7 +237,7 @@ class FileReader:
                     try:
                         self.readXmlFile(file)
                     except:
-                        print "EXCEPTION!"
+                        print("EXCEPTION!")
                         self.readFile(file)
 
     def findTerm(self, myList, phrase, key):
