@@ -23,13 +23,9 @@ Next, navigate to this SOFIA directory. Try:
 
 ```
 from main import SOFIA
-
 sofia = SOFIA(CoreNLP='/Users/brandon/stanford-corenlp-full-2018-10-05')
-
 sentence = '''The intense rain caused flooding in the area and in the capital. This was terrible news for the people of Pandonia. Conflict in the region is on the rise due to the floods. The floods are a direct result of rain and inadequate drainage.'''
-
 results = sofia.getOutputOnline(sentence)
-
 sofia.results2excel('output.xlsx',results)
 ```
 
