@@ -319,7 +319,13 @@ class ExcelWriter:
         index= index.strip(', ')
         return index
 
-
-
-
-
+def getIndexFromSpan(localIndex, spanList):
+    if spanList==0:
+        return ""
+    index=""
+    for span in spanList:
+        i= localIndex[span]
+        if i!= "":
+            index+= i+ ', '
+    index= index.strip(', ')
+    return index

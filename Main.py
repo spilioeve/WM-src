@@ -1,7 +1,7 @@
 from OdinElements import OdinRead
 from ManualRules import CandidateEvents
 from CausalityDetection import RSTModel
-from Utils import Quantifiers, ExcelWriter
+from Utils import Quantifiers, getIndexFromSpan
 from OntologyMapping import Ontology
 from IndicatorSearch import IndicatorSearch
 import os
@@ -45,7 +45,6 @@ class SOFIA:
 
 
     def writeOutput(self, annotations, scoring = False):
-        writer= ExcelWriter(['Causal', 'Events', 'Entities', 'Variables'])
         output = []
         file = 'userinput'
         eventReader = CandidateEvents(annotations)
@@ -53,12 +52,11 @@ class SOFIA:
         data = eventReader.getEvents_Entities()
         self.eventReader = eventReader
         for index in range(numSentences):
-            sentence_output = self.writeSentence(file, index, writer, eventReader, data, 'None', 'None', scoring = scoring)
+            sentence_output = self.writeSentence(file, index, eventReader, data, 'None', 'None', scoring = scoring)
             output.append(sentence_output)
         return output
 
     def writeQueryBasedOutput(self, text, queryList):
-        writer = ExcelWriter(['Causal', 'Events', 'Entities', 'Variables'])
         output = []
         file = 'userinput'
         annotations = self.annotate(text)
@@ -68,12 +66,11 @@ class SOFIA:
             data = eventReader.getEvents_Entities()
             query_sentences= query_finder.findQuery()
             for index in query_sentences:
-                sentence_output = self.writeSentence(file, index, writer, eventReader, data, query, query_finder, False)
+                sentence_output = self.writeSentence(file, index, eventReader, data, query, query_finder, False)
                 output.append(sentence_output)
         return output
 
-    def writeSentence(self, file, index, writer, eventReader, data, query, query_finder, scoring = False):
-        #allEvents2, allEvents, allEntities = data
+    def writeSentence(self, file, index, eventReader, data, query, query_finder, scoring = False):
         output = {}
         allEvents, allEntities = data
         sentence = eventReader.getSentence(index)
@@ -114,8 +111,8 @@ class SOFIA:
             if 'event2' in event['frame']:
                 event2Spans.append(span)               
                 continue
-            patient = writer.getIndexFromSpan(entLocalIndex, event['patient'][0])
-            agent = writer.getIndexFromSpan(entLocalIndex, event['agent'][0])
+            patient = getIndexFromSpan(entLocalIndex, event['patient'][0])
+            agent = getIndexFromSpan(entLocalIndex, event['agent'][0])
             score = 0.0
             if query_finder != 'None':
                 score = query_finder.rankNode(event, 'event', sentence)
@@ -133,17 +130,17 @@ class SOFIA:
             evIndex = 'E{}'.format(self.eventIndex)
             eventLocalIndex[span] = evIndex
             try:
-                patient = writer.getIndexFromSpan(eventLocalIndex, event['patient'][0])
+                patient = getIndexFromSpan(eventLocalIndex, event['patient'][0])
             except:
                 try:
-                    patient= writer.getIndexFromSpan(entLocalIndex, event['patient'][0])
+                    patient= getIndexFromSpan(entLocalIndex, event['patient'][0])
                 except:
                     patient=''
             try:
-                agent = writer.getIndexFromSpan(eventLocalIndex, event['agent'][0])
+                agent = getIndexFromSpan(eventLocalIndex, event['agent'][0])
             except:
                 try:
-                    agent= writer.getIndexFromSpan(entLocalIndex, event['agent'][0])
+                    agent= getIndexFromSpan(entLocalIndex, event['agent'][0])
                 except:
                     agent=''
             score = 0.0
