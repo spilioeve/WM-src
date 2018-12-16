@@ -5,24 +5,26 @@ import redis
 from hashlib import sha1
 from datetime import datetime
 from apscheduler.schedulers.background import BackgroundScheduler
+import logging
 
 app = Flask(__name__)
+app.config.from_object('config')
 
-# Set to local unzipped CoreNLP Path
-sofia = SOFIA(CoreNLP='/Users/brandon/stanford-corenlp-full-2018-10-05')
+if app.config['DEBUG']:
+    app.logger.setLevel(logging.DEBUG)
+else:
+    app.logger.setLevel(logging.INFO)
 
-# Set to True if a redis instance is running at localhost:6379
-# and you wish to use queuing. Otherwise, set to False
-REDIS = True
-
-# Set the default number of seconds results should be 
-# stored by Redis (604800 is equivalent to 7 days)
-REDIS_TTL = 604800
-
-if REDIS:
-    r = redis.Redis(host='localhost', port=6379, db=0)
+# Initialize Redis connection (if applicable)
+if app.config['REDIS']:
+    r = redis.Redis(host=app.config['REDIS_HOST'],
+                    port=app.config['REDIS_PORT'],
+                    db=app.config['REDIS_DB'])
 else:
     r = None
+
+# Initialize sofia
+sofia = SOFIA(CoreNLP=app.config['CORENLP'])    
 
 @app.route('/process_text', methods=['POST'])
 def process_text():
@@ -32,7 +34,7 @@ def process_text():
     '''    
     obj = request.json
     text = obj['text']
-    print(text)
+    app.logger.debug(text)
     if r:
         id_ = gen_id(text)
         r_obj = {'Status': 'Processing', 'Text': text}
@@ -52,8 +54,8 @@ def process_query():
     obj = request.json
     text = obj['text']
     query = obj['query']
-    print(text)
-    print(query)
+    app.logger.debug(text)
+    app.logger.debug(query)
     if r:
         id_ = gen_id(text)
         r_obj = {'Status': 'Processing', 'Text': text, 'Query': ', '.join(query)}
@@ -70,12 +72,15 @@ def reading_status():
     Returns a JSON object which details the status of the reading for a 
     given ID. The status is either 'Processing' or 'Done'.
     '''
-    obj = request.json
-    id_ = obj['ID']
-    print(id_)
-    status = r.hget(id_, 'Status').decode('utf-8')
-    response = {'ID': id_, 'Status': status}
-    return json.dumps(response)
+    if r:
+        obj = request.json
+        id_ = obj['ID']
+        app.logger.info(id_)
+        status = r.hget(id_, 'Status').decode('utf-8')
+        response = {'ID': id_, 'Status': status}
+        return json.dumps(response)
+    else:
+        return 'Endpoint not supported.'
 
 @app.route('/results', methods=['POST'])
 def obtain_results():
@@ -88,24 +93,27 @@ def obtain_results():
     held by Redis indefinitely. Otherwise, they should normally expire after 
     24 hours of being requested.
     '''
-    obj = request.json
-    id_ = obj['ID']
-    print(id_)
-    status = r.hget(id_, 'Status').decode('utf-8')
+    if r:
+        obj = request.json
+        id_ = obj['ID']
+        app.logger.info(id_)
+        status = r.hget(id_, 'Status').decode('utf-8')
 
-    # if SOFIA is still processing text then return a status object
-    if status == 'Processing':
-        response = {'ID': id_, 'Status': status}
-        return json.dumps(response)
+        # if SOFIA is still processing text then return a status object
+        if status == 'Processing':
+            response = {'ID': id_, 'Status': status}
+            return json.dumps(response)
 
-    # otherwise, return reading results
+        # otherwise, return reading results
+        else:
+            # obtain reading results
+            response = r.hget(id_, 'Results').decode('utf-8')
+
+            # Set TTL for Redis key = id_ to 1 day or 86400 seconds 
+            r.expire(id_, 86400)
+            return response
     else:
-        # obtain reading results
-        response = r.hget(id_, 'Results').decode('utf-8')
-
-        # Set TTL for Redis key = id_ to 1 day or 86400 seconds 
-        r.expire(id_, 86400)
-        return response
+        return 'Endpoint not supported.'
 
 def gen_id(text):
     '''
@@ -136,9 +144,9 @@ def SOFIATask():
     Submissions are processed in FIFO order. 
     '''
     if r.llen('SOFIA-Queue') > 0:
-        print('Items found in queue.')
+        app.logger.info('Items found in queue.')
         id_ = r.rpop('SOFIA-Queue').decode('utf-8')
-        print('Processing {}'.format(id_))
+        app.logger.info('Processing {}'.format(id_))
         if r.hexists(id_,'Query'):
             query = r.hget(id_, 'Query').decode('utf-8').split(',')
         else:
@@ -147,8 +155,8 @@ def SOFIATask():
         results = read_text(text, query)
         r.hset(id_, 'Results', json.dumps(results))
         r.hset(id_, 'Status', 'Done')
-        print('Finished processing {}'.format(id_))
-        r.expire(id_, REDIS_TTL)
+        app.logger.info('Finished processing {}'.format(id_))
+        r.expire(id_, app.config['REDIS_TTL'])
 
 @app.before_first_request
 def initialize():
@@ -160,5 +168,5 @@ def initialize():
         apsched.add_job(SOFIATask, 'interval', seconds=5)
         apsched.start()
 
-if __name__ == '__main__':  
-   app.run()
+if __name__ == '__main__':
+    app.run(debug=app.config['DEBUG'])
