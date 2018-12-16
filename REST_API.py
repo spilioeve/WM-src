@@ -15,6 +15,10 @@ sofia = SOFIA(CoreNLP='/Users/brandon/stanford-corenlp-full-2018-10-05')
 # and you wish to use queuing. Otherwise, set to False
 REDIS = True
 
+# Set the default number of seconds results should be 
+# stored by Redis (604800 is equivalent to 7 days)
+REDIS_TTL = 604800
+
 if REDIS:
     r = redis.Redis(host='localhost', port=6379, db=0)
 else:
@@ -78,8 +82,11 @@ def obtain_results():
     '''
     If reading is done for a given request, the results are provided.
     Otherwise, the status is provided. Once results are provided, the 
-    time to live (TTL) for the object in Redis is set to 86400 seconds.
+    time to live (TTL) for the object in Redis is reset to 86400 seconds.
     If the results are requested again, the TTL is reset to this value.
+    So, if a user requests the results once per day, the results will be 
+    held by Redis indefinitely. Otherwise, they should normally expire after 
+    24 hours of being requested.
     '''
     obj = request.json
     id_ = obj['ID']
@@ -126,7 +133,7 @@ def SOFIATask():
     Defines a task which will be scheduled with with the
     [Advanced Python Scheduler](https://apscheduler.readthedocs.io/en/latest/)
     which checks to see if any new text has entered the Redis SOFIA-Queue.
-    Submissions are processed in FIFO order.
+    Submissions are processed in FIFO order. 
     '''
     if r.llen('SOFIA-Queue') > 0:
         print('Items found in queue.')
@@ -141,6 +148,7 @@ def SOFIATask():
         r.hset(id_, 'Results', json.dumps(results))
         r.hset(id_, 'Status', 'Done')
         print('Finished processing {}'.format(id_))
+        r.expire(id_, REDIS_TTL)
 
 @app.before_first_request
 def initialize():
