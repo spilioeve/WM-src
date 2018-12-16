@@ -87,15 +87,18 @@ class SOFIA:
         entities = allEntities[index]
         events = allEvents[index]
 
+        entityScores={}
         output['Entities'] = []
         for span in list(entities.keys()):
             self.entityIndex += 1
             entIndex = 'N{}'.format(self.entityIndex)
             entity = entities[span]
+            entLocalIndex[span] = entIndex
             #scores = ontologyMapper.stringMatching(entity["trigger"], 'WorldBank')
             score=0.0
             if query_finder!= 'None':
                 score= query_finder.rankNode(entity, 'entity', sentence)
+            entityScores[entIndex] = score
             entInfo = [str(file), query, str(score), entIndex, entity["trigger"].lower(), entity["frame"],
                        str(entity["FrameNetFr"]), str(scores), entity['qualifier'].lower(), sentence]
             output['Entities'].append(dict(zip(self.entityHeaders,entInfo)))
@@ -108,8 +111,10 @@ class SOFIA:
             event = events[span]
             self.eventIndex += 1
             evIndex = 'E{}'.format(self.eventIndex)
+            eventLocalIndex[span] = evIndex
             if 'event2' in event['frame']:
-                event2Spans.append(span)               
+                event2Spans.append(span)
+                self.eventIndex -= 1
                 continue
             patient = getIndexFromSpan(entLocalIndex, event['patient'][0])
             agent = getIndexFromSpan(entLocalIndex, event['agent'][0])
@@ -146,14 +151,13 @@ class SOFIA:
             score = 0.0
             if query_finder != 'None':
                 score = query_finder.rankNode(event, 'event', sentence)
-            eventScores['E' + str(evIndex - 1)] = score
-            eventInfo = [str(file), query, str(score), 'E' + str(evIndex - 1), event["trigger"], event["frame"], str(event["FrameNetFr"]), str(scores), event['location'],
+            eventScores[evIndex] = score
+            eventInfo = [str(file), query, str(score), evIndex, event["trigger"], event["frame"], str(event["FrameNetFr"]), str(scores), event['location'],
                              event['temporal'], agent, event['agent'][1], patient, event['patient'][1], sentence]
             output['Events'].append(dict(zip(self.eventHeaders,eventInfo)))
         #TODO: Fix the Causality Model
         #It currently chooses ALL the events. This is wrong, it should choose the ones that do not contain others as arguments
-
-        rst = RSTModel(events, eventLocalIndex, entities, entLocalIndex, sentence, lemmas, pos)
+        rst = RSTModel(events, eventLocalIndex, entities, entLocalIndex, sentence, lemmas, pos, eventScores, entityScores)
         causalRel = rst.getCausalNodes()  ### OR TRUE
         output['Causal'] = []
         for relation in causalRel:
@@ -213,19 +217,19 @@ class SOFIA:
         events = self.flatten([i['Events'] for i in results])
         causal = self.flatten([i['Causal'] for i in results])
 
-        variables_df = pd.DataFrame(variables)
-        entities_df = pd.DataFrame(entities)
-        events_df = pd.DataFrame(events)
-        causal_df = pd.DataFrame(causal)
+        variables_df = pd.DataFrame(variables)[self.variableHeaders]
+        entities_df = pd.DataFrame(entities)[self.entityHeaders]
+        events_df = pd.DataFrame(events)[self.eventHeaders]
+        causal_df = pd.DataFrame(causal)[self.causalHeaders]
 
         # Create a Pandas Excel writer using XlsxWriter as the engine.
         writer = pd.ExcelWriter(output_path)
 
         # Write each dataframe to a different worksheet.
-        variables_df.to_excel(writer, sheet_name='Variables')
-        entities_df.to_excel(writer, sheet_name='Entities')
-        events_df.to_excel(writer, sheet_name='Events')
-        causal_df.to_excel(writer, sheet_name='Causal')
+        variables_df.to_excel(writer, sheet_name='Variables', index=False)
+        entities_df.to_excel(writer, sheet_name='Entities', index=False)
+        events_df.to_excel(writer, sheet_name='Events', index=False)
+        causal_df.to_excel(writer, sheet_name='Causal', index=False)
 
         # Close the Pandas Excel writer and output the Excel file.
-        writer.save()    
+        writer.save()
