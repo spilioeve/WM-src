@@ -8,6 +8,8 @@ import os
 import string
 from openpyxl import Workbook
 import pdb
+from collections import OrderedDict
+
 
 def writeOutput(files):
     # path = os.getcwd()
@@ -97,11 +99,13 @@ def writeSentence(file, index, writer, eventReader, data, query, query_finder, s
         writer.writeRow('Variables', [str(file), query, sentence, str(scores)])
     lemmas = eventReader.getSentenceLemmas(index)
     pos = eventReader.getSentencePOSTags(index)
-    entLocalIndex = {}
+    entLocalIndex = OrderedDict()
     entities = allEntities[index]
     events = allEvents[index]
-    entityScores={}
-    for span in entities.keys():
+    entityScores= OrderedDict()
+    entities_keys = entities.keys()
+    entities_keys.sort()
+    for span in entities_keys:
         entity = entities[span]
         entIndex = writer.getIndex('Entities')
         entLocalIndex[span] = 'N' + str(entIndex - 1)
@@ -113,10 +117,12 @@ def writeSentence(file, index, writer, eventReader, data, query, query_finder, s
         entInfo = [str(file), query, str(score), 'N' + str(entIndex - 1), string.lower(entity["trigger"]), entity["frame"],
                    str(entity["FrameNetFr"]), str(scores), string.lower(entity['qualifier']), sentence]
         writer.writeRow('Entities', entInfo)
-    eventLocalIndex = {}
-    eventScores={}
+    eventLocalIndex = OrderedDict()
+    eventScores=OrderedDict()
     event2Spans=[]
-    for span in events.keys():
+    events_keys = events.keys()
+    events_keys.sort()
+    for span in events_keys:
         event = events[span]
         if 'event2' in event['frame']:
             event2Spans.append(span)
