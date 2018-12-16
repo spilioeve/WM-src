@@ -33,6 +33,15 @@ class CandidateEvents:
             self.refiner = FrameNetRefiner()
         self.frRefiner= FrameNetRefiner()
         #self.lmtzr = WordNetLemmatizer()
+    def overlap(self, span, keys):
+        s1, t1= span
+        for s2, t2 in keys:
+            if s1>= s2 and t2> s1:
+                return True, (s2, t2)
+            elif s2<=t1 and t2>s1:
+                return True, (s2, t2)
+        return False, (0, 0)
+
 
     def getVerbEvents(self, sentenceIndex, events2, events, entities, refine=True):
         data= self.stanfordLoader.getDataPerSentence(sentenceIndex)
@@ -42,15 +51,20 @@ class CandidateEvents:
         tokens= data["tokens"]
         sentence= data["sentence"]
         spans = data['spans']
-        sentenceEvents = {}
-        sentenceEvents2= {}
+        sentenceEvents = events
+        sentenceEvents2= events2
+
         for index in range(len(lemmas)):
         #for item in lemmas:
             span = spans[index]
-            if span in events:
+            overlap1=self.overlap(span, events.keys())
+            overlap2=self.overlap(span, events2.keys())
+            if overlap1[0]:
+                span= overlap1[1]
                 sentenceEvents[span] = events[span]
                 sentenceEvents[span].update({"index": index})
-            elif span in events2:
+            elif overlap2[0]:
+                span= overlap2[1]
                 sentenceEvents2[span] = events2[span]
                 sentenceEvents2[span].update({"index": index})
             elif pos[index] in verbTags and lemmas[index] not in aux:

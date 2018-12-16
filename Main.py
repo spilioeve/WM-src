@@ -100,7 +100,7 @@ def writeSentence(file, index, writer, eventReader, data, query, query_finder, s
     entLocalIndex = {}
     entities = allEntities[index]
     events = allEvents[index]
-    
+    entityScores={}
     for span in entities.keys():
         entity = entities[span]
         entIndex = writer.getIndex('Entities')
@@ -109,6 +109,7 @@ def writeSentence(file, index, writer, eventReader, data, query, query_finder, s
         score=0.0
         if query_finder!= 'None':
             score= query_finder.rankNode(entity, 'entity', sentence)
+        entityScores['N' + str(entIndex - 1)] = score
         entInfo = [str(file), query, str(score), 'N' + str(entIndex - 1), string.lower(entity["trigger"]), entity["frame"],
                    str(entity["FrameNetFr"]), str(scores), string.lower(entity['qualifier']), sentence]
         writer.writeRow('Entities', entInfo)
@@ -162,8 +163,7 @@ def writeSentence(file, index, writer, eventReader, data, query, query_finder, s
         writer.writeRow('Events', eventInfo)
     #TODO: Fix the Causality Model
     #It currently chooses ALL the events. This is wrong, it should choose the ones that do not contain others as arguments
-
-    rst = RSTModel(events, eventLocalIndex, entities, entLocalIndex, sentence, lemmas, pos)
+    rst = RSTModel(events, eventLocalIndex, entities, entLocalIndex, sentence, lemmas, pos, eventScores, entityScores)
     causalRel = rst.getCausalNodes()  ### OR TRUE
     for relation in causalRel:
         relIndex = writer.getIndex("Causal")
@@ -205,30 +205,36 @@ def odinData(file):
 
 
 dataDir='MITRE_AnnualEval'
-#dataDir='proposal_doc'
+dataDir='sentence_input'
 projectName= '/South_Sudan_Famine'
 path = os.getcwd()
 project = os.path.dirname(path) + projectName
 
 
 def runSOFIA(query):
-    #files= ['proposal_doc']
-    files= os.listdir(project+ '/data/'+dataDir)
+    files= ['userInput']
+    #files= os.listdir(project+ '/data/'+dataDir)
     ##files= ['FFP Fact Sheet_South Sudan_2018.01.17 BG', 'i8533en', 'FEWS NET South Sudan Famine Risk Alert_20170117 BG', 'FAOGIEWSSouthSudanCountryBriefSept2017 BG', '130035 excerpt BG', 'CLiMIS_FAO_UNICEF_WFP_SouthSudanIPC_29June_FINAL BG', 'FEWSNET South Sudan Outlook January 2018 BG', 'EA_Seasonal Monitor_2017_08_11 BG']
     if '.DS_Store' in files:
         files= files[:files.index('.DS_Store')]+ files[files.index('.DS_Store')+1:]
-    #writeOutput(files)
+    writeOutput(files)
     #files+= ['IPC_Annex_Indicators', 'Food_security' ]
     #files=['MONTHLY_PRICE_WATCH_AND_ANNEX_AUGUST2014_1', 'Global Weather Hazard-150305']
-    writeQueryBasedOutput(files, query)
+    #writeQueryBasedOutput(files, query)
 
 
 
-#sentence="The intense rain caused flooding in the area."
-#getOutputOnline(sentence)
+# sentence="The intense rain caused flooding in the area."
+sentence='The intense rain causes flooding in the area and in the capital.'
+k=  'This was terrible news for the people of Pandonia. Conflict in the region is on the rise due to the floods. The floods are a direct result of rain and inadequate drainage.'
+getOutputOnline(k)
+
+#runSOFIA('')
+
 query1= ['food security', 'malnutrition', 'starvation', 'famine', 'mortality', 'die', 'conflict', 'IPC phase']
 query2=['health', 'malnutrition', 'food security', 'drought', 'rainfall', 'food']
 #query= ['health', 'malnutrition', 'rainfall' ,'food production', 'food availability', 'food security', 'food imports', 'food aid', 'crop yield', 'drought', 'poverty', 'famine']
 query= ['malnutrition', 'famine' ,'food production', 'food availability', 'food security', 'food imports', 'food aid', 'crop yield', 'poverty']
-query=['drought', 'flood', 'livestock', 'rainfall', 'conflict', 'displacement', 'crop harvest', 'food production', 'food availability', 'food security', 'community', 'economy', 'currency value', 'crop yield', 'market function', 'poverty', 'political instability']
-runSOFIA(query)
+query=['conflict', 'drought', 'flood', 'livestock', 'rainfall', 'conflict', 'displacement', 'crop harvest', 'food production', 'food availability', 'food security', 'community', 'economy', 'currency value', 'crop yield', 'market function', 'poverty', 'political instability']
+#runSOFIA(query)
+# #runSOFIA(query)

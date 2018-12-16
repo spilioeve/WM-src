@@ -3,7 +3,7 @@ verbTags=["VB", "VBP", "VBD", "VBZ", "VBN", "VBG"]
 
 class RSTModel:
 
-    def __init__(self, events, eventLocalIndex, entities, entityLocalIndex, sentence, lemmas, pos):
+    def __init__(self, events, eventLocalIndex, entities, entityLocalIndex, sentence, lemmas, pos, eventScores, entityScores):
         self.sentence= sentence
         # self.lemmas= lemmas
         # self.pos= pos
@@ -14,24 +14,38 @@ class RSTModel:
         self.entities= entities
         self.entityIndex= entityLocalIndex
         self.reportFrames = ['Communication', 'Text_creation', 'Statement', 'Warning', 'Indicating', 'Cogitation']
+        self.eventScores= eventScores
+        self.entityScores= entityScores
         #self.events= self.format(events, eventLocalIndex)
 
     def format(self, keys, entities=False):
         if entities:
             localIndex= self.entityIndex
             localEvents= self.entities
+            scores= self.entityScores
         else:
             localIndex = self.localIndex
             localEvents = self.events
+            scores= self.eventScores
         eventsIndex=""
         eventsSpan=""
-        for index in localIndex.keys():
-            if index in keys:
-                eventsIndex+= localIndex[index]+ ', '
-                eventsSpan+= localEvents[index]['trigger']+', '
-        eventsIndex= eventsIndex.strip(', ')
-        eventsSpan= eventsSpan.strip(', ')
+        # for index in localIndex.keys():
+        #     if index in keys:
+        #         eventsIndex+= localIndex[index]+ ', '
+        #         eventsSpan+= localEvents[index]['trigger']+', '
+        # eventsIndex= eventsIndex.strip(', ')
+        # eventsSpan= eventsSpan.strip(', ')
+        #return eventsIndex, eventsSpan
+        bestScore = -1.0
+        for span in localIndex.keys():
+            if span in keys:
+                index= localIndex[span]
+                if scores[index] > bestScore:
+                    bestScore = scores[index]
+                    eventsIndex = index
+                    eventsSpan = localEvents[span]['trigger']
         return eventsIndex, eventsSpan
+
 
 ##Outcome, result
 ###Correlation: relate to, influence, correlate
