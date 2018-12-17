@@ -8,6 +8,7 @@
 4. [REST API](#rest-api)
 5. [API Usage](#api-usage)
 6. [API Architecture](#api-architecture)
+7. [Redis Docker](#redis-docker)
 
 ## Introduction
 
@@ -165,3 +166,12 @@ Meanwhile, a SOFIA Task is run every 5 seconds. This task checks the queue to se
 The results of reading can be obtained by an API call to the `/results` endpoint.
 
 By default, reading results are stored for 7 days and then expire. If `results` are obtained, a new time to live (TTL) is set for the `ID` to 24 hours. 
+
+#### Redis Docker
+
+To run Redis in a Docker container you can use:
+
+```
+docker pull redis
+docker run -P 6379:6379 --name sofia-redis -d redis
+```
