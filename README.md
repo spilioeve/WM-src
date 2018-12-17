@@ -47,19 +47,29 @@ sofia.results2excel('q_output.xlsx', q_results)
 ```
 
 # REST API
-A REST API built on Flask can be run by navigating to the SOFIA directory and running:
+
+A REST API built on Flask can be run by navigating to the SOFIA directory. First, you shoud update `config.py` with the appropriate configurations. The primary consideration is whether you will be using [Redis](https://redis.io/) to service requests asynchronously. This is helpful when you expect documents to be large and need to submit many of them at once. More on that in the Redis section below.
+
+Once you have set the appropriate configuration, including the path to your CoreNLP instance, you can run the application with:
 
 ```
 export FLASK_APP=REST_API.py
 flask run
 ```
 
-This runs the API at `localhost:5000`. The API has two endpoints:
+This runs the API at `localhost:5000`. If running the API without Redis, there are two relevant endpoints:
 
 1. `/process_text`: receives text and processes it using basic SOFIA processing
 2. `/process_query`: receives text and an array of queries and processes it using SOFIA's query based reading.
 
-Using the Python `requests` library, either endpoint can be hit using:
+If using Redis, the endpoints take on a slightly modified flavor and there are 4 or them:
+
+1. `/process_text`: receives text and returns an ID which can be used to retrieve results.
+2. `/process_query`: receives text and returns an ID which can be used to retrieve results.
+3. `/status`: receives an ID and returns a status: either `Processing` or `Done`.
+4. `/results`: if an ID status is `Done` this endpoint receives the ID and returns the processed JSON.
+
+Using the Python `requests` library, the two primary endpoints can be hit using:
 
 ```
 import requests
