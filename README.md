@@ -66,7 +66,7 @@ sofia.results2excel('q_output.xlsx', q_results)
 
 ## REST API
 
-A REST API built on Flask can be run by navigating to the SOFIA directory. First, you shoud update `config.py` with the appropriate configurations. The primary consideration is whether you will be using [Redis](https://redis.io/) to service requests asynchronously. This is helpful when you expect documents to be large and need to submit many of them at once. More on that in the [API Architecture section below](#api-architecture).
+A REST API built on Flask can be run by navigating to the `rest_api` directory. First, you shoud update `config.py` with the appropriate configurations. The primary consideration is whether you will be using [Redis](https://redis.io/) to service requests asynchronously. This is helpful when you expect documents to be large and need to submit many of them at once. More on that in the [API Architecture section below](#api-architecture).
 
 The default is that Redis **will not be used**:
 ```

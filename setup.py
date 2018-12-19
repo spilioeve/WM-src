@@ -1,5 +1,4 @@
-from distutils.core import setup
-import setuptools
+from setuptools import setup
 from setuptools.command.develop import develop
 from setuptools.command.install import install
 import subprocess
@@ -69,10 +68,13 @@ def main():
           dependency_links=['https://github.com/stanfordnlp/python-stanford-corenlp/tarball/master#egg=python-stanford-corenlp-3.9.2'],
           cmdclass={
                     'develop': PostDevelopCommand,
-                    'install': PostInstallCommand,
+                    #'install': PostInstallCommand,
                    },
         )
 
+# TODO: determine why PostDevelopCommand does not work but PostInstallCommand does; 
+# on install it then skips including requirements
+# so it is commented out for now.
 
 if __name__ == '__main__':
     main()
