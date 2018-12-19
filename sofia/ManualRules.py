@@ -1,9 +1,9 @@
 import math
 import os
 import string
-from FrameNetRefine import FrameNetRefiner
-from OntologyMapping import Ontology
-from StanfordInfo import DataExtractor
+from sofia.FrameNetRefine import FrameNetRefiner
+from sofia.OntologyMapping import Ontology
+from sofia.StanfordInfo import DataExtractor
 from nltk.stem.wordnet import WordNetLemmatizer
 import pdb
 

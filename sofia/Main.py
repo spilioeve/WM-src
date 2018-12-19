@@ -1,9 +1,9 @@
-from OdinElements import OdinRead
-from ManualRules import CandidateEvents
-from CausalityDetection import RSTModel
-from Utils import Quantifiers, getIndexFromSpan
-from OntologyMapping import Ontology
-from IndicatorSearch import IndicatorSearch
+from sofia.OdinElements import OdinRead
+from sofia.ManualRules import CandidateEvents
+from sofia.CausalityDetection import RSTModel
+from sofia.Utils import Quantifiers, getIndexFromSpan
+from sofia.OntologyMapping import Ontology
+from sofia.IndicatorSearch import IndicatorSearch
 import os
 import string
 from openpyxl import Workbook

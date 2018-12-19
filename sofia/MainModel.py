@@ -1,7 +1,7 @@
-from DataLoader import Loader
+from sofia.DataLoader import Loader
 import torch
 import torch.nn as nn
-from BiLSTM_CRF import BiLSTM_CRF
+from sofia.BiLSTM_CRF import BiLSTM_CRF
 import torch.optim as optim
 import torch.autograd as autograd
 import string
@@ -33,8 +33,8 @@ def train(epochs, dim, hidden_dim, trainX, trainY):
     optimizer = optim.SGD(model.parameters(), lr=0.01, weight_decay=1e-4)
     for t in range(epochs):
         end = time.time()
-        print "Epoch number" + str(t)
-        print "Time" + str(end - start)
+        print("Epoch number {}".format(t))
+        print("Time {}".format(end - start))
         ####
         for i in range(len(trainX)):
             ####
@@ -56,7 +56,7 @@ def test(path, data, model, dataFile, labels, dim):
     index=0
     for sentence, tags, predicates, items in dev:
         if index%100==0:
-            print index
+            print(index)
         index+=1
         #inputVector = sentenceToVector(sentence, vocabulary) #Or Ontonotes?
         inputVector = sentenceToVector(sentence, vocabulary, predicates)

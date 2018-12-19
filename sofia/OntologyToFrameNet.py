@@ -1,8 +1,8 @@
-from FrameNetRefine import FrameNetRefiner
+from sofia.FrameNetRefine import FrameNetRefiner
 import os
 import ast
 import string
-from Utils import FileReader
+from sofia.Utils import FileReader
 
 
 class FrameNetMapper:
@@ -28,7 +28,7 @@ class FrameNetMapper:
         for details in clusterBlocks:
             w= details.split('\n')[-2]
             wordList= ast.literal_eval(w)
-            print "Processing Cluster " + str(curr)
+            print("Processing Cluster {}".format(curr))
             frameClusters[curr]= self.framesPerCluster(curr, wordList)
             curr+=1
         return frameClusters, clusterBlocks
@@ -57,8 +57,8 @@ class FrameNetMapper:
                     elif pos in self.verbTags:
                         verbal= True
             else:
-                print "Word not found"
-                print word
+                print("Word not found")
+                print(word)
             if found:
                 refinedWords.append(word)
             elif verbal:
@@ -101,9 +101,9 @@ def main(project, numClusters):
     itemBound= '-------------------------------------------'
     if project== 'Sudan':
         path= os.path.dirname(os.getcwd())+'/South_Sudan_Famine/OntologyFiles'
-        print "Running Sudan Project"
+        print("Running Sudan Project")
     else:
-        print "Running Bellingcat Project"
+        print("Running Bellingcat Project")
         path = os.path.dirname(os.getcwd()) + '/AIDA/OntologyFiles'
 
     f = open(path + '/terms.txt')
@@ -121,13 +121,13 @@ def main(project, numClusters):
         dic, termList= frames[index]
         if len(termList)>10:
             f.write(string.join(cluster[:2], itemBound) + itemBound + '\nFrameNet Frames : ')
-            for key, value in sorted(dic.iteritems(), key=lambda (k, v): (v, k), reverse=True):
+            for key, value in sorted(dic.items(), key=lambda k: k[1], reverse=True):
                 f.write(key+':' +str(value)+',')
             f.write('\n'+itemBound+ '\n'+ str(termList)+ '\n'+clusterBound)
         else:
             mapper.unmatched[index]+= termList
     f.close()
-    print "Unmatched words"
-    print mapper.unmatched
+    print("Unmatched words")
+    print(mapper.unmatched)
 
 main('Sudan', 250)

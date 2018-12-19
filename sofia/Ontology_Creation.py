@@ -6,7 +6,7 @@ from nltk.corpus import framenet as fn
 import os
 from sklearn.cluster import KMeans
 import numpy as np
-from FrameNetRefine import FrameNetRefiner
+from sofia.FrameNetRefine import FrameNetRefiner
 
 verbTags=["VB", "VBP", "VBD", "VBZ", "VBN"] #VBN and VBG maybe?
 nounTags= ["NN", "NNS", "NNP", "NNPS", "JJ"]
@@ -14,7 +14,7 @@ project= '/Users/evangeliaspiliopoulou/Desktop/WorldModelers/South_Sudan_Famine'
 #semcor= wordnet_ic.ic('ic-semcor.dat')
 
 def extractNgrams(file):
-    print file
+    print(file)
     jsonfile = open(project+ '/outputStanford/'+ file, 'r')
     jsonstr = jsonfile.read()
     data = json.loads(jsonstr)
@@ -125,18 +125,18 @@ def orderList(list, fileName, synset= False):
             dic[item]=1
     file = open(project+'/OntologyFiles/'+fileName, 'w')
     if not synset:
-        for key, value in sorted(dic.iteritems(), key=lambda (k, v): (v, k), reverse=True):
+        for key, value in sorted(dic.items(), key=lambda k: k[1], reverse=True):
             file.write(str(key) + '\t' + str(value))
             file.write('\n')
     else:
-        for key, value in sorted(dic.iteritems(), key=lambda (k, v): (v, k), reverse=True):
+        for key, value in sorted(dic.items(), key=lambda k: k[1], reverse=True):
             definition= str(key.definition())
             lemma= str(key.name())
             file.write(lemma + '\t' + str(value)+'\t'+ definition)
             file.write('\n')
 
     file.close()
-    print "Done writing "+ fileName
+    print("Done writing {}".format(fileName))
 
 def cleanText(text):
     ###Use BeautifulSoup to refine html. Re-write the code, see documentation to decide

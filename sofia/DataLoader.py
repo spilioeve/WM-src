@@ -1,5 +1,5 @@
 import os
-from ManualRules import CandidateEvents
+from sofia.ManualRules import CandidateEvents
 from nltk.corpus import framenet as fn
 import numpy as np
 

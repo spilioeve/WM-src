@@ -1,4 +1,4 @@
-from StanfordInfo import DataExtractor
+from sofia.StanfordInfo import DataExtractor
 # from ManualRules import CandidateEvents
 # from OntologyMapping import Ontology
 # from CausalityDetection import RSTModel

@@ -7,9 +7,9 @@ class Ontology:
     def __init__(self):
         #self.dir= os.path.dirname(os.getcwd())
         self.dir= os.getcwd()
-        self.file = '/Ontology_v2.txt'
+        self.file = '/sofia/Ontology_v2.txt'
         self.ontology= self.getOntologyManualData()
-        self.indicatorsWorldBank= self.getIndexes('/Indicators_WorldBank_Full.txt')
+        self.indicatorsWorldBank= self.getIndexes('/sofia/Indicators_WorldBank_Full.txt')
         #data2= self.getOntologyAutoData()
 
 
