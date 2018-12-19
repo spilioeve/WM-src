@@ -35,10 +35,12 @@ Next, navigate back to the root of the SOFIA directory and run:
 python setup.py install
 ```
 
+> Note: if you are working with SOFIA for development purposes, then install it with `python setup.py develop`. This enables you to make changes to the code and see them reflected in the package without having to reinstall.
+
 Then, you can try:
 
 ```
-from sofia.Main import SOFIA
+from sofia import SOFIA
 sofia = SOFIA(CoreNLP='/Users/brandon/stanford-corenlp-full-2018-10-05')
 text = '''The intense rain caused flooding in the area and in the capital. This was terrible news for the people of Pandonia. Conflict in the region is on the rise due to the floods. The floods are a direct result of rain and inadequate drainage.'''
 results = sofia.getOutputOnline(text)
