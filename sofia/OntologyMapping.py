@@ -7,14 +7,16 @@ class Ontology:
     def __init__(self):
         #self.dir= os.path.dirname(os.getcwd())
         self.dir= os.getcwd()
-        self.file = '/sofia/Ontology_v2.txt'
+        self.file = os.path.dirname(os.path.abspath(__file__)) + '/data/Ontology_v2.txt'
+        # self.file = 'sofia/Data/Ontology_v2.txt'
         self.ontology= self.getOntologyManualData()
-        self.indicatorsWorldBank= self.getIndexes('/sofia/Indicators_WorldBank_Full.txt')
+        self.indicator_path = os.path.dirname(os.path.abspath(__file__)) + '/data/Indicators_WorldBank_Full.txt'
+        self.indicatorsWorldBank= self.getIndexes(self.indicator_path)
         #data2= self.getOntologyAutoData()
 
 
     def getOntologyManualData(self):
-        f= open(self.dir+self.file)
+        f= open(self.file)
         text= f.read()
         data=ast.literal_eval(text)
         f.close()
@@ -28,7 +30,7 @@ class Ontology:
         return 'None'
 
     def getIndexes(self, path):
-        f= open(self.dir+ path)
+        f= open(path)
         text= f.read().split('\n\n')
         f.close()
         indicators={}

@@ -22,7 +22,8 @@ class FrameNetRefiner:
         self.Causal=['Causation']
 
     def getTaxonomy(self):
-        f= open(self.dir+'/sofia/event_frames.txt')
+        event_path = os.path.dirname(os.path.abspath(__file__)) + '/data/event_frames.txt'
+        f= open(event_path)
         text= f.read()
         frameLines= text.strip('\n').split('\n')
         f.close()
@@ -33,7 +34,8 @@ class FrameNetRefiner:
         return frames
 
     def getFrameNetLUs(self):
-        f = open(self.dir+ '/sofia/FrameNetLUs.txt')
+        FrameNeLUs_path = os.path.dirname(os.path.abspath(__file__)) + '/data/FrameNetLUs.txt'
+        f = open(FrameNeLUs_path)
         text = f.read()
         data = ast.literal_eval(text)
         f.close()
@@ -41,7 +43,8 @@ class FrameNetRefiner:
 
 
     def getWordFrameNet(self):
-        f = open(self.dir+'/sofia/WordFrameNet.txt')
+        WordFrameNet_path = os.path.dirname(os.path.abspath(__file__)) + '/data/WordFrameNet.txt'
+        f = open(WordFrameNet_path)
         text= f.read()
         f.close()
         text= text.strip('\n')

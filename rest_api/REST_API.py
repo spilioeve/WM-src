@@ -1,5 +1,5 @@
 from flask import Flask, request
-from Main import SOFIA
+from sofia import SOFIA
 import json
 import redis
 from hashlib import sha1
