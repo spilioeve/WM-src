@@ -157,7 +157,7 @@ Note the response in each case is the reading output in JSON format.
 
 The REST API has the option to use Redis as both a process queue and an in-memory data store for short-term storage of reading results. The primary goal is to de-couple the API from the SOFIA process itself. So, if reading is slow, the API will still be performant and responsive.
 
-![SOFIA REST Architecture](SOFIA-REST-Architecture.png "SOFIA REST Architecture")
+![SOFIA REST Architecture](images/SOFIA-REST-Architecture.png "SOFIA REST Architecture")
 
 If Redis is used, when a request is submitted to the API it generates an `ID` for the request. It adds this `ID` to a Redis list (the queue) and creates a hash for the `ID` where information about the request will be stored, such as its status, the request text (and query) and ultimately its results.
 
