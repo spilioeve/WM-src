@@ -21,7 +21,7 @@ SOFIA is an Information Extraction system that currently detects Causal Relation
 SOFIA currently grounds the detected Events and Entities to her internal Ontology, We note that although the Ontology is subject to change in the future, we do not plan to change the Upper Level structure. Additional Information includes Time and Location, which SOFIA extracts for Events, when possible.
 
 ## Usage
-First, install the requirements in `requirements.txt`. Note that the [official Python Interface to Stanford CoreNLP](https://github.com/stanfordnlp/python-stanford-corenlp) is not kept up to date on PyPi so it must be installed with:
+First, install the [official Python Interface to Stanford CoreNLP](https://github.com/stanfordnlp/python-stanford-corenlp), which is not kept up to date on PyPi so it must be installed manually with:
 
 ```
 git clone https://github.com/stanfordnlp/python-stanford-corenlp.git
@@ -29,10 +29,16 @@ cd python-stanford-corenlp
 python setup.py install
 ```
 
-Next, navigate to this SOFIA directory. Try:
+Next, navigate back to the root of the SOFIA directory and run:
 
 ```
-from main import SOFIA
+python setup.py install
+```
+
+Then, you can try:
+
+```
+from sofia.Main import SOFIA
 sofia = SOFIA(CoreNLP='/Users/brandon/stanford-corenlp-full-2018-10-05')
 text = '''The intense rain caused flooding in the area and in the capital. This was terrible news for the people of Pandonia. Conflict in the region is on the rise due to the floods. The floods are a direct result of rain and inadequate drainage.'''
 results = sofia.getOutputOnline(text)
