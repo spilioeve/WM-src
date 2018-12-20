@@ -18,5 +18,6 @@ REDIS_DB = 0
 # Set to local unzipped CoreNLP Path
 CORENLP = 'PATH_TO_CORENLP'
 
+# Set basic auth username and password
 BASIC_AUTH_USERNAME = 'TESTUSER'
 BASIC_AUTH_PASSWORD = 'TESTPASSWORD'

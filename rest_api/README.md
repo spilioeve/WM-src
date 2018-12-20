@@ -26,3 +26,6 @@ If the config is acceptable then reload NGINX with:
 ```
 sudo nginx -s reload
 ```
+
+## Authentification
+This application currently uses [Flask-BasicAuth](https://flask-basicauth.readthedocs.io/en/latest/). Before running the app you should configure the username and password in `config.py`.

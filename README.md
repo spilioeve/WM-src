@@ -75,6 +75,8 @@ REDIS = False
 
 Change this to `True` and specify the Redis instance in order to use Redis as a back-end as detailed in the [API Architecture section below](#api-architecture).
 
+>Note: Flask-BasicAuth is used to authenticate the API. The username and password should be configured in `config.py`. The defaults are `TESTUSER` and `TESTPASSWORD`.
+
 Once you have set the appropriate configuration, including the path to your CoreNLP instance, you can run the application with:
 
 ```
@@ -105,12 +107,12 @@ url = 'http://localhost:5000'
 
 # process_text 
 obj = {'text': 'The intense rain caused flooding in the area and in the capital'}
-response = requests.post(url + '/process_text', json=obj)
+response = requests.post(url + '/process_text', json=obj, auth=('TESTUSER','TESTPASSWORD'))
 
 # process_query
 obj = {'text': 'The intense rain caused flooding in the area and in the capital',
        'query': ['food security', 'malnutrition', 'starvation', 'famine', 'flood']}
-response = requests.post(url + '/process_query', json=obj)
+response = requests.post(url + '/process_query', json=obj, auth=('TESTUSER','TESTPASSWORD'))
 
 response = response.json()
 ```
@@ -123,7 +125,7 @@ In this case, the response contains JSON which will look like this:
 The `response` from above can be sent to the `/status` endpoint to check the status of reading:
 
 ```
-status = requests.post(url + '/status', json=response)
+status = requests.post(url + '/status', json=response, auth=('TESTUSER','TESTPASSWORD'))
 status = status.json()
 ```
 
@@ -136,7 +138,7 @@ This returns the status which will either look like the object above (e.g. `Stat
 If reading is `Done`, then the results can be obtained by using the `/results` endpoint and the original `response` (as it contains the correct ID):
 
 ```
-results = requests.post(url + '/results', json=response)
+results = requests.post(url + '/results', json=response, auth=('TESTUSER','TESTPASSWORD'))
 ```
 
 #### Basic Implementation
@@ -148,13 +150,13 @@ url = 'http://localhost:5000'
 
 # process_text 
 obj = {'text': 'The intense rain caused flooding in the area and in the capital'}
-response = requests.post(url + '/process_text', json=obj)
+response = requests.post(url + '/process_text', json=obj, auth=('TESTUSER','TESTPASSWORD'))
 response.json()
 
 # process_query
 obj = {'text': 'The intense rain caused flooding in the area and in the capital',
        'query': ['food security', 'malnutrition', 'starvation', 'famine', 'flood']}
-response = requests.post(url + '/process_query', json=obj)
+response = requests.post(url + '/process_query', json=obj, auth=('TESTUSER','TESTPASSWORD'))
 response.json()
 ```
 Note the response in each case is the reading output in JSON format.
