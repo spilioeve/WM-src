@@ -26,6 +26,12 @@ else:
 # Initialize sofia
 sofia = SOFIA(CoreNLP=app.config['CORENLP'])    
 
+
+@app.route("/")
+def hello():
+    return "<h1 style='color:blue'>SOFIA REST API</h1>"
+
+
 @app.route('/process_text', methods=['POST'])
 def process_text():
     '''
