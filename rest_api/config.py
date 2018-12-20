@@ -16,4 +16,7 @@ REDIS_PORT = 6379
 REDIS_DB = 0
 
 # Set to local unzipped CoreNLP Path
-CORENLP = '/Users/brandon/stanford-corenlp-full-2018-10-05'
+CORENLP = 'PATH_TO_CORENLP'
+
+BASIC_AUTH_USERNAME = 'TESTUSER'
+BASIC_AUTH_PASSWORD = 'TESTPASSWORD'

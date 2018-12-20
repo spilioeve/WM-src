@@ -6,9 +6,12 @@ from hashlib import sha1
 from datetime import datetime
 from apscheduler.schedulers.background import BackgroundScheduler
 import logging
+from flask_basicauth import BasicAuth
+
 
 app = Flask(__name__)
 app.config.from_object('config')
+basic_auth = BasicAuth(app)
 
 if app.config['DEBUG']:
     app.logger.setLevel(logging.DEBUG)
@@ -26,13 +29,13 @@ else:
 # Initialize sofia
 sofia = SOFIA(CoreNLP=app.config['CORENLP'])    
 
-
 @app.route("/")
+@basic_auth.required
 def hello():
     return "<h1 style='color:blue'>SOFIA REST API</h1>"
 
-
 @app.route('/process_text', methods=['POST'])
+@basic_auth.required
 def process_text():
     '''
     Adds a reading task to the SOFIA-Queue.
@@ -52,6 +55,7 @@ def process_text():
     return json.dumps(response)
 
 @app.route('/process_query', methods=['POST'])
+@basic_auth.required
 def process_query():
     '''
     Adds a query based reading task to the SOFIA-Queue.
@@ -73,6 +77,7 @@ def process_query():
     return json.dumps(response)
 
 @app.route('/status', methods=['POST'])
+@basic_auth.required
 def reading_status():
     '''
     Returns a JSON object which details the status of the reading for a 
@@ -89,6 +94,7 @@ def reading_status():
         return 'Endpoint not supported.'
 
 @app.route('/results', methods=['POST'])
+@basic_auth.required
 def obtain_results():
     '''
     If reading is done for a given request, the results are provided.
