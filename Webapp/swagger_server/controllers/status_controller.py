@@ -4,6 +4,7 @@ import six
 from swagger_server.models.id import ID  # noqa: E501
 from swagger_server.models.process_response import ProcessResponse  # noqa: E501
 from swagger_server import util
+from swagger_server.sofia_functions import _reading_status
 
 
 def status(body):  # noqa: E501
@@ -18,4 +19,5 @@ def status(body):  # noqa: E501
     """
     if connexion.request.is_json:
         body = ID.from_dict(connexion.request.get_json())  # noqa: E501
-    return 'do some magic!'
+        resp = _reading_status(body.id)
+        return resp

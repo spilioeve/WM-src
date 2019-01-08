@@ -4,6 +4,7 @@ import six
 from swagger_server.models.id import ID  # noqa: E501
 from swagger_server.models.results import Results  # noqa: E501
 from swagger_server import util
+from swagger_server.sofia_functions import _obtain_results
 
 
 def results(body):  # noqa: E501
@@ -18,4 +19,5 @@ def results(body):  # noqa: E501
     """
     if connexion.request.is_json:
         body = ID.from_dict(connexion.request.get_json())  # noqa: E501
-    return 'do some magic!'
+        resp = _obtain_results(body.id)
+        return resp

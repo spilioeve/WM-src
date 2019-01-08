@@ -4,6 +4,8 @@ import connexion
 
 from swagger_server import encoder
 
+# Custom imports
+from swagger_server.sofia_functions import initialize
 
 def main():
     app = connexion.App(__name__, specification_dir='./swagger/')
@@ -11,6 +13,11 @@ def main():
     app.add_api('swagger.yaml', arguments={'title': 'SOFIA REST API'})
     app.run(port=8080)
 
-
 if __name__ == '__main__':
+    # initialize background SOFIATask
+    initialize()
+
+    # run application
     main()
+
+

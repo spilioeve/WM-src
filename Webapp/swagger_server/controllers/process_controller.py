@@ -5,7 +5,7 @@ from swagger_server.models.process_response import ProcessResponse  # noqa: E501
 from swagger_server.models.text import Text  # noqa: E501
 from swagger_server.models.text_query import TextQuery  # noqa: E501
 from swagger_server import util
-from swagger_server.sofia_functions import _process_text
+from swagger_server.sofia_functions import _process_text, _process_query
 
 
 def process_query(body):  # noqa: E501
@@ -20,7 +20,9 @@ def process_query(body):  # noqa: E501
     """
     if connexion.request.is_json:
         body = TextQuery.from_dict(connexion.request.get_json())  # noqa: E501
-    return 'do some magic!'
+        print(body)
+        resp = _process_query(body.text, body.query)
+        return resp
 
 
 def process_text(body):  # noqa: E501
