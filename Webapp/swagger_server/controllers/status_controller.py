@@ -5,8 +5,10 @@ from swagger_server.models.id import ID  # noqa: E501
 from swagger_server.models.process_response import ProcessResponse  # noqa: E501
 from swagger_server import util
 from swagger_server.sofia_functions import _reading_status
+from swagger_server.security import requires_auth
 
 
+@requires_auth
 def status(body):  # noqa: E501
     """Submit ID and receive reading status for request
 

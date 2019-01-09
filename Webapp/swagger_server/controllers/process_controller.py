@@ -6,8 +6,10 @@ from swagger_server.models.text import Text  # noqa: E501
 from swagger_server.models.text_query import TextQuery  # noqa: E501
 from swagger_server import util
 from swagger_server.sofia_functions import _process_text, _process_query
+from swagger_server.security import requires_auth
 
 
+@requires_auth
 def process_query(body):  # noqa: E501
     """Submit text and queries for query-based reading
 
@@ -20,11 +22,11 @@ def process_query(body):  # noqa: E501
     """
     if connexion.request.is_json:
         body = TextQuery.from_dict(connexion.request.get_json())  # noqa: E501
-        print(body)
         resp = _process_query(body.text, body.query)
         return resp
 
 
+@requires_auth
 def process_text(body):  # noqa: E501
     """Submit text for reading
 

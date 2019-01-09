@@ -5,8 +5,10 @@ from swagger_server.models.id import ID  # noqa: E501
 from swagger_server.models.results import Results  # noqa: E501
 from swagger_server import util
 from swagger_server.sofia_functions import _obtain_results
+from swagger_server.security import requires_auth
 
 
+@requires_auth
 def results(body):  # noqa: E501
     """Submit ID and receive reading results for request
 

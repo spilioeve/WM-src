@@ -18,6 +18,8 @@ tags:
 schemes:
 - "https"
 - "http"
+security:
+- basicAuth: []
 paths:
   /process_text:
     post:
@@ -121,6 +123,9 @@ paths:
           schema:
             $ref: "#/definitions/Results"
       x-swagger-router-controller: "swagger_server.controllers.results_controller"
+securityDefinitions:
+  basicAuth:
+    type: "basic"
 definitions:
   Text:
     type: "object"
@@ -130,10 +135,10 @@ definitions:
       text:
         type: "string"
         example: "Flooding caused disruption in the region."
-    example:
-      text: "Flooding caused disruption in the region."
     xml:
       name: "Text"
+    example:
+      text: "Flooding caused disruption in the region."
   TextQuery:
     type: "object"
     required:
