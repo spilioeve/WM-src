@@ -42,6 +42,7 @@ def _process_text(text):
         r.hmset(id_, r_obj)
         r.lpush('SOFIA-Queue', id_)
         response = {'ID': id_, 'Status': 'Processing'}
+        logger.info('Reading requested for: {}'.format(id_))
     else:
         response = read_text(text)
     return response
@@ -59,6 +60,7 @@ def _process_query(text, query):
         r.hmset(id_, r_obj)
         r.lpush('SOFIA-Queue', id_)    
         response = {'ID': id_, 'Status': 'Processing'}
+        logger.info('Reading requested for: {}'.format(id_))
     else:
         response = read_text(text, query=query)
     return response
@@ -69,7 +71,7 @@ def _reading_status(id_):
     given ID. The status is either 'Processing' or 'Done'.
     '''
     if r:
-        logger.info(id_)
+        logger.info('Status requested for: {}'.format(id_))
         status = r.hget(id_, 'Status').decode('utf-8')
         response = {'ID': id_, 'Status': status}
         return response
@@ -87,7 +89,7 @@ def _obtain_results(id_):
     24 hours of being requested.
     '''
     if r:
-        logger.info(id_)
+        logger.info('Results requested for: {}'.format(id_))
         status = r.hget(id_, 'Status').decode('utf-8')
 
         # if SOFIA is still processing text then return a status object
