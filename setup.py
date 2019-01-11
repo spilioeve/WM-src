@@ -65,10 +65,10 @@ def main():
           packages=['sofia'],
           install_requires=parse_requirements('requirements.txt', ignore=('stanford-corenlp==3.9.2')),
           include_package_data=True,
-          dependency_links=['https://github.com/stanfordnlp/python-stanford-corenlp/tarball/master#egg=python-stanford-corenlp-3.9.2'],
+          # dependency_links=['https://github.com/stanfordnlp/python-stanford-corenlp/tarball/master#egg=python-stanford-corenlp-3.9.2'],
           cmdclass={
-                    'develop': PostDevelopCommand,
-                    #'install': PostInstallCommand,
+                    # 'develop': PostDevelopCommand,
+                    # 'install': PostInstallCommand,
                    },
         )
 
