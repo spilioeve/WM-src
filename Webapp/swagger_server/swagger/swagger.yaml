@@ -1,0 +1,200 @@
+---
+swagger: "2.0"
+info:
+  description: "This API specification is for the SOFIA Reading System. SOFIA is an\
+    \ Information Extraction system that currently detects Causal Relationships explicitly\
+    \ mentioned in the same sentence. SOFIA is built based upon prominent Linguistic\
+    \ Theories that view Causality as a discourse relation between two Eventualities.\
+    \ Following this approach, SOFIA extracts three major classes of information:\
+    \ Entities, Events and Relations. All those classes are important in order to\
+    \ build a coherent model that captures the semantics of a sentence."
+  version: "1.0.0"
+  title: "SOFIA REST API"
+host: "sofia.worldmodelers.com"
+basePath: "/"
+tags:
+- name: "SOFIA"
+  description: "The SOFIA web service landing page"
+schemes:
+- "https"
+- "http"
+security:
+- basicAuth: []
+paths:
+  /process_text:
+    post:
+      tags:
+      - "process"
+      summary: "Submit text for reading"
+      description: "Submit an object containing the key `text` whose value is the\
+        \ text to be processed by SOFIA."
+      operationId: "process_text"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "A `text` object."
+        required: true
+        schema:
+          $ref: "#/definitions/Text"
+      responses:
+        200:
+          description: "Successful operation"
+          schema:
+            $ref: "#/definitions/ProcessResponse"
+      x-swagger-router-controller: "swagger_server.controllers.process_controller"
+  /process_query:
+    post:
+      tags:
+      - "process"
+      summary: "Submit text and queries for query-based reading"
+      description: "Submit an object containing the key `text` whose value is the\
+        \ text to be processed by SOFIA. The object should also contain the key `query`\
+        \ which should be an array of queries to be used for query-based reading."
+      operationId: "process_query"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "An object containing `text` and `query`."
+        required: true
+        schema:
+          $ref: "#/definitions/TextQuery"
+      responses:
+        200:
+          description: "Successful operation"
+          schema:
+            $ref: "#/definitions/ProcessResponse"
+      x-swagger-router-controller: "swagger_server.controllers.process_controller"
+  /status:
+    post:
+      tags:
+      - "status"
+      summary: "Submit ID and receive reading status for request"
+      description: "Submit an object containing the key `ID` whose value is the ID\
+        \ returned by a `process` request. Receive the status for this reading request."
+      operationId: "status"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "An `ID` object."
+        required: true
+        schema:
+          $ref: "#/definitions/ID"
+      responses:
+        200:
+          description: "Successful operation"
+          schema:
+            $ref: "#/definitions/ProcessResponse"
+      x-swagger-router-controller: "swagger_server.controllers.status_controller"
+  /results:
+    post:
+      tags:
+      - "results"
+      summary: "Submit ID and receive reading results for request"
+      description: "Submit an object containing the key `ID` whose value is the ID\
+        \ returned by a `process` request. Receive the results for this reading request\
+        \ if the reading is `Done`."
+      operationId: "results"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "An `ID` object."
+        required: true
+        schema:
+          $ref: "#/definitions/ID"
+      responses:
+        200:
+          description: "Successful operation"
+          schema:
+            $ref: "#/definitions/Results"
+      x-swagger-router-controller: "swagger_server.controllers.results_controller"
+securityDefinitions:
+  basicAuth:
+    type: "basic"
+definitions:
+  Text:
+    type: "object"
+    required:
+    - "text"
+    properties:
+      text:
+        type: "string"
+        example: "Flooding caused disruption in the region."
+    xml:
+      name: "Text"
+    example:
+      text: "Flooding caused disruption in the region."
+  TextQuery:
+    type: "object"
+    required:
+    - "query"
+    - "text"
+    properties:
+      text:
+        type: "string"
+        example: "Flooding caused disruption in the region"
+      query:
+        type: "array"
+        example:
+        - "flood"
+        - "conflict"
+        - "famine"
+        items:
+          type: "string"
+    example:
+      query:
+      - "flood"
+      - "conflict"
+      - "famine"
+      text: "Flooding caused disruption in the region"
+  ProcessResponse:
+    type: "object"
+    required:
+    - "ID"
+    - "Status"
+    properties:
+      ID:
+        type: "string"
+        example: "FE8201E0718AD4F97E4FAB192A2DBB5BD7CB2D6F"
+        description: "Unique identifier for reading request"
+      Status:
+        type: "string"
+        example: "Processing"
+        description: "Reading request status"
+        enum:
+        - "Processing"
+        - "Done"
+    example:
+      Status: "Processing"
+      ID: "FE8201E0718AD4F97E4FAB192A2DBB5BD7CB2D6F"
+  ID:
+    type: "object"
+    required:
+    - "ID"
+    properties:
+      ID:
+        type: "string"
+        example: "FE8201E0718AD4F97E4FAB192A2DBB5BD7CB2D6F"
+        description: "Unique identifier for reading request"
+    example:
+      ID: "FE8201E0718AD4F97E4FAB192A2DBB5BD7CB2D6F"
+  Results:
+    type: "array"
+    items:
+      type: "object"
+      properties: {}
