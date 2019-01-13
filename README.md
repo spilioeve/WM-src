@@ -41,7 +41,7 @@ Then, you can try:
 
 ```
 from sofia import SOFIA
-sofia = SOFIA(CoreNLP='/Users/brandon/stanford-corenlp-full-2018-10-05')
+sofia = SOFIA(CoreNLP='PATH_TO_UNZIPPED_CORENLP')
 text = '''The intense rain caused flooding in the area and in the capital. This was terrible news for the people of Pandonia. Conflict in the region is on the rise due to the floods. The floods are a direct result of rain and inadequate drainage.'''
 results = sofia.getOutputOnline(text)
 sofia.results2excel('output.xlsx',results)
