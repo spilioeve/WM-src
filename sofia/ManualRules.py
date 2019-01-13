@@ -62,10 +62,6 @@ class CandidateEvents:
         spans = data['spans']
         sentenceEvents = events
         sentenceEvents2= events2
-<<<<<<< HEAD:sofia/ManualRules.py
-=======
-
->>>>>>> master:ManualRules.py
         for index in range(len(lemmas)):
         #for item in lemmas:
             span = spans[index]
