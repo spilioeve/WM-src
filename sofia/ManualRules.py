@@ -32,6 +32,15 @@ class CandidateEvents:
             self.refiner = FrameNetRefiner()
         self.frRefiner= FrameNetRefiner()
         #self.lmtzr = WordNetLemmatizer()
+    def overlap(self, span, keys):
+        s1, t1= span
+        for s2, t2 in keys:
+            if s1>= s2 and t2> s1:
+                return True, (s2, t2)
+            elif s2<=t1 and t2>s1:
+                return True, (s2, t2)
+        return False, (0, 0)
+
 
     def overlap(self, span, keys):
         s1, t1= span
@@ -53,6 +62,10 @@ class CandidateEvents:
         spans = data['spans']
         sentenceEvents = events
         sentenceEvents2= events2
+<<<<<<< HEAD:sofia/ManualRules.py
+=======
+
+>>>>>>> master:ManualRules.py
         for index in range(len(lemmas)):
         #for item in lemmas:
             span = spans[index]
