@@ -13,6 +13,10 @@ server {
 
     location / {
         include proxy_params;
+        if ($request_uri = "") {
+            rewrite ^ /ui;
+            }
         proxy_pass http://unix:/home/ubuntu/sofia-swagger/Webapp/sofia.sock;
     }
 }
+
