@@ -181,6 +181,7 @@ class SOFIA:
     
     def annotate(self, text):
         annotations = self.CoreNLPclient.annotate(text, output_format='json')
+        #annotations = self.CoreNLPclient.annotate(text)
         self.entityIndex = 0
         self.eventIndex = 0
         self.variableIndex = 0
