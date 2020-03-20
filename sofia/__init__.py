@@ -1,1 +1,1 @@
-from sofia.Main import SOFIA
+from sofia.main import SOFIA

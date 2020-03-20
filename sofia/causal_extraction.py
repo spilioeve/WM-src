@@ -1,5 +1,5 @@
 
-verbTags=["VB", "VBP", "VBD", "VBZ", "VBN", "VBG"]
+verb_tags=["VB", "VBP", "VBD", "VBZ", "VBN", "VBG"]
 
 class CausalLinks:
 
@@ -59,7 +59,7 @@ class CausalLinks:
             elif lemma in causal['EffectCause']:
                 triggers.append((index, 'right', 'CausalRelation'))
             elif lemma in preventive:
-                if pos[index] in verbTags:
+                if pos[index] in verb_tags:
                     if 'by' in lemmas[index + 1:]:
                         triggers.append((index, "right", 'PreventRelation'))
                     else:
