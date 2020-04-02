@@ -20,7 +20,7 @@ SOFIA is an Information Extraction system whose main goal is to extract Causal R
 
 SOFIA extracts three major types of information: Entities, Events and Causal-type Relations. All semantic units are important in order to build a coherent model useful for CAG construction. Entities include physical objects, people, organizations, etc, while events denote some action, process or change of state that happens. Entities are arguments in Events (eg The car moves), while Events are arguments in Relations like Causality. 
 
-SOFIA currently grounds the detected Events and Entities to her internal Ontology, We note that although the Ontology is subject to minor changes, we do not plan to change the Upper Level structure. Additional information provided by SOFIA includes Time, Location, Confidence Scores and Quantitative/Qualitative metrics of Entities.
+The detected Events and Entities are currently grounded to SOFIA's internal Ontology, We note that although the Ontology is subject to minor changes, we do not plan to change the Upper Level structure. Additional information provided by SOFIA includes Time, Location, Confidence Scores and Quantitative/Qualitative metrics of Entities.
 
 ## Usage
 First, install the [official Python Interface to Stanford CoreNLP](https://github.com/stanfordnlp/python-stanford-corenlp), which is not kept up to date on PyPi so it must be installed manually with:
