@@ -11,14 +11,15 @@
 7. [Redis Docker](#redis-docker)
 
 ## Introduction
-
-This repo contains source code and other necessary files (eg Ontology) to run SOFIA tool. The input can be a sentence or a set of files which are already preprocessed via Stanford CoreNLP and stored as json. The output will be an xsl file containing all the relations that SOFIA identified.
+This repo contains source code and other necessary files (e.g., the SOFIA Ontology) to run SOFIA tool. The input can be a sentence or a set of files which are already preprocessed via Stanford CoreNLP and stored as json. The output is an xsl file containing all the relations that SOFIA identified.
 
 ## SOFIA Overview
 
-SOFIA is an Information Extraction system whose main goal is to extract Causal Relations explicitly mentioned in text, in order to facilitate automatic CAG construction.
+SOFIA Overview
 
-SOFIA extracts three major types of information: Entities, Events and Causal-type Relations. All semantic units are important in order to build a coherent model useful for CAG construction. Entities include physical objects, people, organizations, etc, while events denote some action, process or change of state that happens. Entities are arguments in Events (eg The car moves), while Events are arguments in Relations like Causality. 
+SOFIA is an Information Extraction system whose main goal is to extract Causal Relations that are explicitly mentioned in text, in order to facilitate automatic Concept Graph (CAG) construction.
+
+SOFIA extracts three major types of information: Entities, Events, and Causal-type Relations. All semantic units are important in order to build a coherent model useful for CAG construction. Entities include physical objects, people, organizations, etc., while events denote some actions, processes or changes of state. Entities are participants in events (e.g., the car moves), while events are arguments to relations like Causality (e.g., Reading causes Thinking).
 
 The detected Events and Entities are currently grounded to SOFIA's internal Ontology, We note that although the Ontology is subject to minor changes, we do not plan to change the Upper Level structure. Additional information provided by SOFIA includes Time, Location, Confidence Scores and Quantitative/Qualitative metrics of Entities.
 
