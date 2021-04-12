@@ -2,9 +2,7 @@ import json
 import os
 from sofia import *
 
-cdr_api = "https://wm-ingest-pipeline-rest-1.prod.dart.worldmodelers.com/dart/api/v1/cdrs"
-upload_api = 'https://wm-ingest-pipeline-rest-1.prod.dart.worldmodelers.com/dart/api/v1/readers/upload'
-'https://wm-ingest-pipeline-rest-1.prod.dart.worldmodelers.com/dart/api/v1/readers/upload'
+
 
 def remove_empty_lines(text_init):
     lines=text_init.split('\n')
@@ -16,7 +14,7 @@ def remove_empty_lines(text_init):
     return '\n'.join(new_lines)
 
 
-def get_cdrs(docs_path, cdr_path):
+def get_cdrs(docs_path, cdr_path, cdr_api, sofia_pwd):
     docs = os.listdir(docs_path)
     for doc in docs:
         thin_cdr = json.load(open(docs_path+'/'+doc))
@@ -25,8 +23,8 @@ def get_cdrs(docs_path, cdr_path):
         #cdr_data = json.loads(thin_cdr['cdr-data'])
         #release_date = thin_cdr['release-date']
         #document_id = cdr_data['document_id']
-        address = f'https://wm-ingest-pipeline-rest-1.prod.dart.worldmodelers.com/dart/api/v1/cdrs/{document_id}?date={release_date}'
-        os.system('curl -u sofia:season-JUMPED-provide-91 -o kafka_text_mar21/' + doc + ' ' + address)
+        address = f'{cdr_api}/{document_id}?date={release_date}'
+        os.system('curl -u sofia:{} -o kafka_text_mar21/{} {}'.format(sofia_pwd, doc, address))
         with open(cdr_path+'/'+doc) as f:
             content = json.load(f)
             text = content['extracted_text']
@@ -34,18 +32,16 @@ def get_cdrs(docs_path, cdr_path):
         with open(cdr_path+'/'+doc, 'w') as f:
             f.write(text_proc)
 
-def upload_docs(path, upload_api):
-    #upload_url= 'https://wm-ingest-pipeline-rest-1.prod.dart.worldmodelers.com/dart/api/v1/wm-readers/reader/upload'
-    upload_api = 'https://wm-ingest-pipeline-rest-1.prod.dart.worldmodelers.com/dart/api/v1/readers/upload'
+def upload_docs(path, upload_api, sofia_pwd):
     docs= os.listdir(path)
-    command1 = 'curl --location --user sofia:season-JUMPED-provide-91 --request POST '+upload_api+' --form file=@'
+    command1 = 'curl --location --user sofia:{} --request POST {} --form file=@'.format(sofia_pwd, upload_api)
     command2 = ''' --form 'metadata={ "identity": "sofia", "version": "1.1", "document_id": "'''
     for doc in docs:
         command = command1 + path + doc  + command2 + doc[:-5] + '"}' + "'"
         os.system(command)
 
 
-def run_sofia_online(ontology= 'compositional', experiment= 'may2021', version= 'v1', save = True):
+def run_sofia_online(upload_api, cdr_api, sofia_pwd, ontology= 'compositional', experiment= 'may2021', version= 'v1', save = True):
     sofia = SOFIA(ontology)
     print("Configure Docker...")
     sofia_path = os.getcwd()
@@ -62,7 +58,7 @@ def run_sofia_online(ontology= 'compositional', experiment= 'may2021', version= 
               .format(kafka_path))
 
     print("Downloading CDRS...")
-    get_cdrs(kafka_path, text_path)
+    get_cdrs(kafka_path, text_path, cdr_api, sofia_pwd)
 
     print("Preprocessing files with corenlp...")
     docs = os.listdir(text_path)
@@ -77,4 +73,4 @@ def run_sofia_online(ontology= 'compositional', experiment= 'may2021', version= 
 
     print("Uploading docs to DART.....")
     output_path = 'sofia/data/{}_output{}'.format(ann_path, version)
-    upload_docs(output_path, upload_api)
+    upload_docs(output_path, upload_api, sofia_pwd)
