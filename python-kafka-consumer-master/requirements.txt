@@ -1,0 +1,6 @@
+faust
+importlib_resources
+pytest
+pytest-asyncio
+pytest-mock
+asynctest

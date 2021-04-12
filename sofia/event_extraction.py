@@ -14,11 +14,11 @@ nounTags= ["NN", "NNS", "NNP", "NNPS", "JJ"]
 
 class CandidateEvents:
 
-    def __init__(self, data_extractor, refiner='Ontology'):
+    def __init__(self, data_extractor, refiner= None):
         self.data_extractor = data_extractor
         self.sentences= self.data_extractor.sentences
-        if refiner== 'Ontology':
-            self.ontology = Ontology()
+        if refiner != None:
+            self.ontology = Ontology(refiner)
         else:
             self.ontology = None
         self.frameNet= FrameNetFrames(external=True)

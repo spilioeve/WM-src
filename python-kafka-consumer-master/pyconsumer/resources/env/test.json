@@ -1,0 +1,9 @@
+{
+    "app": {
+        "id": "test_pyconsumer"
+    },
+    "topic": {
+        "from": "testout"
+    },
+    "persist_dir": "."
+}

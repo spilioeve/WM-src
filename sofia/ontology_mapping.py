@@ -6,11 +6,12 @@ from nltk.corpus import stopwords
 
 class Ontology:
 
-    def __init__(self, CauseEx=False):
+    def __init__(self, ontology):
         self.dir= os.getcwd()
-        file_name = '/data/Ontology.json'
+        file_name = '/data/Ontology_{}.json'.format(ontology)
+        #file_name = '/data/Ontology_wm.json'
         self.external_ontology=False
-        if CauseEx:
+        if ontology == 'causex':
             self.external_ontology = True
             file_name = './data/CauseX_Ontology.json'
         self.file = os.path.dirname(os.path.abspath(__file__)) + file_name
