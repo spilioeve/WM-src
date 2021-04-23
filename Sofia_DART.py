@@ -1,7 +1,7 @@
 import json
 import os
 from sofia import *
-
+import argparse
 
 
 def remove_empty_lines(text_init):
@@ -41,26 +41,18 @@ def upload_docs(path, upload_api, sofia_pwd):
         os.system(command)
 
 
-def run_sofia_online(upload_api, cdr_api, sofia_pwd, ontology= 'compositional', experiment= 'may2021', version= 'v1', save = True):
-    sofia = SOFIA(ontology)
-    print("Configure Docker...")
+def run_sofia_online(upload_api, cdr_api, sofia_pwd, ontology, experiment, version, save):
     sofia_path = os.getcwd()
     #docs_path = sofia_path+'/dart_docs'
-
-    os.system('docker build -t python-kafka-consumer-local .')
-    os.system('mkdir {}/{}/{}'.format('sofia', 'data', experiment))
-    for i in ['kafka_out', 'text', 'annotations']:
-        os.system('mkdir {}/{}/{}/{}'.format('sofia', 'data', experiment, i))
     kafka_path = '{}/{}/{}/{}/{}'.format(sofia_path, 'sofia', 'data', experiment, 'kafka_out')
     text_path = '{}/{}/{}/{}/{}'.format(sofia_path, 'sofia', 'data', experiment, 'text')
     ann_path = '{}/{}/{}/{}/{}'.format(sofia_path, 'sofia', 'data', experiment, 'annotations')
-    os.system('docker run --env PROGRAM_ARGS=wm-sasl-example -it -v {}:/opt/app/data python-kafka-consumer-local:latest'
-              .format(kafka_path))
 
     print("Downloading CDRS...")
     get_cdrs(kafka_path, text_path, cdr_api, sofia_pwd)
 
     print("Preprocessing files with corenlp...")
+    sofia = SOFIA(ontology)
     docs = os.listdir(text_path)
     for doc in docs:
         #if doc != '.DS_Store':
@@ -74,3 +66,43 @@ def run_sofia_online(upload_api, cdr_api, sofia_pwd, ontology= 'compositional', 
     print("Uploading docs to DART.....")
     output_path = 'sofia/data/{}_output{}'.format(ann_path, version)
     upload_docs(output_path, upload_api, sofia_pwd)
+
+def main():
+    parser = argparse.ArgumentParser(description='Augment Data with Wikipedia Links')
+    parser.add_argument('--experiment', type=str, default=None)
+    parser.add_argument('--version', type=str, default='v1')
+    parser.add_argument('--save', type=str, default=True)
+    parser.add_argument('--ontology', type=str, default='compositional')
+    parser.add_argument('--upload_api', type=str, default=upload_api)
+    parser.add_argument('--cdr_api', type=str, default= cdr_api)
+    parser.add_argument('--password', type=str, default=password)
+
+    args = parser.parse_args()
+
+    print("Configure Docker and create directories...")
+    experiment = args.experiment
+    os.chdir('python-kafka-consumer-master')
+    os.system('docker build -t python-kafka-consumer-local .')
+    os.chdir('../')
+    os.system('mkdir {}/{}/{}'.format('sofia', 'data', experiment))
+    for i in ['kafka_out', 'text', 'annotations']:
+        os.system('mkdir {}/{}/{}/{}'.format('sofia', 'data', experiment, i))
+    kafka_path = '{}/{}/{}/{}/{}'.format(os.getcwd(), 'sofia', 'data', experiment, 'kafka_out')
+    prev_size = len(os.listdir(kafka_path))
+
+    while True:
+        #os.system('docker run --env PROGRAM_ARGS=wm-sasl-example -it -v {}:/opt/app/data '
+         #         'python-kafka-consumer-local:latest'.format(kafka_path))
+
+        curr_size = len(os.listdir(kafka_path))
+        if curr_size!=prev_size:
+            print("New documents detected!")
+            print('#'*100)
+            prev_size = curr_size
+            run_sofia_online(args.upload_api, args.cdr_api, args.password, args.ontology,
+                         experiment, args.version, args.save)
+
+
+
+if __name__ == '__main__':
+    main()
