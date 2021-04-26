@@ -21,7 +21,8 @@ def create_consumer_app(broker, user, pwd):
         autodiscover=True,
         broker=broker,
         broker_credentials=credentials,
-        topic_disable_leader=True
+        topic_disable_leader=True,
+        consumer_auto_offset_reset='earliest'
     )
 
     return app
