@@ -54,10 +54,10 @@ def get_cdr_text(doc_id, cdr_api, sofia_user, sofia_pass):
 
     if response.status_code == 200:
         cdr_json = json.loads(response.text)
-        remove_empty_lines(cdr_json['extracted_text'])
+        return remove_empty_lines(cdr_json['extracted_text'])
     else:
         # @eva - TODO - this is an error, you should log any error messages or perform any kind of recovery here
-        pass
+        return None
 
 
 def upload_sofia_output(doc_id, file, output_api, sofia_user, sofia_pass):
@@ -94,7 +94,6 @@ def run_sofia_stream(kafka_broker,
                      version='v1',
                      save=True):
     sofia = SOFIA(ontology)
-    print("Configure Docker...")
     sofia_path = os.getcwd()
 
     corenlp_annotated = f'{sofia_path}/sofia/data/{experiment}/annotations'
@@ -103,22 +102,24 @@ def run_sofia_stream(kafka_broker,
         makedirs(corenlp_annotated)
 
     app = create_kafka_app(kafka_broker, sofia_user, sofia_pwd)
-    topic = app.topic("dart.cdr.streaming.updates", key_type=str, value_type=str)
+    dart_update_topic = app.topic("dart.cdr.streaming.updates", key_type=str, value_type=str)
 
     # @eva - this is the function that will be called each time the kafka consumer receives a message
     # this is the "body" of the consumer loop
-    @app.agent(topic)
+    @app.agent(dart_update_topic)
     async def process_document(stream: faust.StreamT):
         doc_stream = stream.events()
         async for cdr_event in doc_stream:
             doc_id = cdr_event.key
             extracted_text = get_cdr_text(doc_id, cdr_api, sofia_user, sofia)
 
-            # i'm less sure what to do here... you will need to refactor these methods to handle docs
-            # on a doc by doc basis, instead of dealing with directories of docs
-            sofia.annotate(extracted_text, save=save, file_name=f'{corenlp_annotated}/{doc_id}')
-            sofia.get_file_output(corenlp_annotated, version, docs=None)
-            # upload file...
+            if extracted_text is not None:
+                # @eva - i'm less sure what to do here... you will need to refactor these methods to handle docs
+                # on a doc by doc basis instead of dealing with directories of docs
+                sofia.annotate(extracted_text, save=save, file_name=f'{corenlp_annotated}/{doc_id}')
+                sofia.get_file_output(corenlp_annotated, version, docs=None)
+
+                # upload file, etc...
 
     app.main()
 
