@@ -77,11 +77,13 @@ def run_sofia_online(kafka_broker,
             print(len(extracted_text))
             # annotations = sofia.annotate(extracted_text, save=False)
 
+    app.main()
+
 
 def run():
-    kafka_broker = ''
+    kafka_broker = 'localhost:9092'
     upload_api = ''
-    cdr_api = ''
+    cdr_api = 'http://ec2-35-171-47-235.compute-1.amazonaws.com:8090/dart/api/v1/cdrs'
     sofia_user = None
     sofia_pass = None
     ontology = 'compositional'
