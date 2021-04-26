@@ -6,6 +6,7 @@ from sofia import *
 import faust
 import ssl
 import requests
+from requests.auth import HTTPBasicAuth
 
 
 def create_consumer_app(broker, user, pwd):
@@ -42,7 +43,12 @@ def remove_empty_lines(text_init):
 
 def get_cdr_text(doc_id, cdr_api, sofia_user, sofia_pass):
     url = f'{cdr_api}/{doc_id}'
-    cdr_json = json.loads(requests.get(url, auth=requests.HTTPBasicAuth(sofia_user, sofia_pass)).text)
+
+    http_auth = None
+    if sofia_user is not None and sofia_pass is not None:
+        http_auth = HTTPBasicAuth(sofia_user, sofia_pass)
+
+    cdr_json = json.loads(requests.get(url, auth=http_auth).text)
     return remove_empty_lines(cdr_json['extracted_text'])
 
 
