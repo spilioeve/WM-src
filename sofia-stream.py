@@ -20,7 +20,7 @@ def create_consumer_app(broker, user, pwd):
     # create your application
     app = faust.App(
         'sofia',
-        autodiscover=True,
+        autodiscover=False,
         broker=broker,
         broker_credentials=credentials,
         topic_disable_leader=True,
