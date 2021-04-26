@@ -7,9 +7,11 @@ import faust
 import ssl
 import requests
 from requests.auth import HTTPBasicAuth
+from os.path import exists, basename
+from os import makedirs
 
 
-def create_consumer_app(broker, user, pwd):
+def create_kafka_app(broker, user, pwd):
     credentials = None
     if user is not None and pwd is not None:
         credentials = faust.SASLCredentials(
@@ -48,20 +50,41 @@ def get_cdr_text(doc_id, cdr_api, sofia_user, sofia_pass):
     if sofia_user is not None and sofia_pass is not None:
         http_auth = HTTPBasicAuth(sofia_user, sofia_pass)
 
-    cdr_json = json.loads(requests.get(url, auth=http_auth).text)
-    return remove_empty_lines(cdr_json['extracted_text'])
+    response = requests.get(url, auth=http_auth)
+
+    if response.status_code == 200:
+        cdr_json = json.loads(response.text)
+        remove_empty_lines(cdr_json['extracted_text'])
+    else:
+        # @eva - TODO - this is an error, you should log any error messages or perform any kind of recovery here
+        pass
 
 
-def upload_docs(path, upload_api, sofia_pwd):
-    docs = os.listdir(path)
-    command1 = 'curl --location --user sofia:{} --request POST {} --form file=@'.format(sofia_pwd, upload_api)
-    command2 = ''' --form 'metadata={ "identity": "sofia", "version": "1.1", "document_id": "'''
-    for doc in docs:
-        command = command1 + path + doc + command2 + doc[:-5] + '"}' + "'"
-        os.system(command)
+def upload_sofia_output(doc_id, file, output_api, sofia_user, sofia_pass):
+    metadata = {
+        "identity": "sofia",
+        "version": "1.1",
+        "document_id": doc_id
+    }
+
+    form_request = {"file": (basename(file.name), file), "metadata": (None, json.dumps(metadata), 'application/json')}
+
+    http_auth = None
+    if sofia_user is not None and sofia_pass is not None:
+        http_auth = HTTPBasicAuth(sofia_user, sofia_pass)
+
+    response = requests.post(output_api, files=form_request, auth=http_auth)
+
+    if response.status_code == 201:
+        # @eva - processing is complete and successful, you can either log this or ignore it
+        pass
+    else:
+        # @eva - this means uploading the output failed, you should log this and implement any kind of retry or recovery
+        # logic here...
+        pass
 
 
-def run_sofia_online(kafka_broker,
+def run_sofia_stream(kafka_broker,
                      upload_api,
                      cdr_api,
                      sofia_user,
@@ -73,23 +96,35 @@ def run_sofia_online(kafka_broker,
     sofia = SOFIA(ontology)
     print("Configure Docker...")
     sofia_path = os.getcwd()
-    # docs_path = sofia_path+'/dart_docs'
-    app = create_consumer_app(kafka_broker, sofia_user, sofia_pwd)
+
+    corenlp_annotated = f'{sofia_path}/sofia/data/{experiment}/annotations'
+
+    if not exists(corenlp_annotated):
+        makedirs(corenlp_annotated)
+
+    app = create_kafka_app(kafka_broker, sofia_user, sofia_pwd)
     topic = app.topic("dart.cdr.streaming.updates", key_type=str, value_type=str)
 
+    # @eva - this is the function that will be called each time the kafka consumer receives a message
+    # this is the "body" of the consumer loop
     @app.agent(topic)
     async def process_document(stream: faust.StreamT):
         doc_stream = stream.events()
         async for cdr_event in doc_stream:
             doc_id = cdr_event.key
             extracted_text = get_cdr_text(doc_id, cdr_api, sofia_user, sofia)
-            print(len(extracted_text))
-            # annotations = sofia.annotate(extracted_text, save=False)
+
+            # i'm less sure what to do here... you will need to refactor these methods to handle docs
+            # on a doc by doc basis, instead of dealing with directories of docs
+            sofia.annotate(extracted_text, save=save, file_name=f'{corenlp_annotated}/{doc_id}')
+            sofia.get_file_output(corenlp_annotated, version, docs=None)
+            # upload file...
 
     app.main()
 
 
-def run():
+if __name__ == '__main__':
+    # consider replacing these values with calls to `os.environ[...]`
     kafka_broker = 'localhost:9092'
     upload_api = ''
     cdr_api = 'http://ec2-35-171-47-235.compute-1.amazonaws.com:8090/dart/api/v1/cdrs'
@@ -99,8 +134,4 @@ def run():
     experiment = 'may2021'
     version = 'v1'
     save = False
-    run_sofia_online(kafka_broker, upload_api, cdr_api, sofia_user, sofia_pass, experiment, version, save)
-
-
-if __name__ == '__main__':
-    run()
+    run_sofia_stream(kafka_broker, upload_api, cdr_api, sofia_user, sofia_pass, experiment, version, save)
