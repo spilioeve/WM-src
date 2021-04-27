@@ -125,7 +125,7 @@ def run_sofia_stream(kafka_broker,
 
 
 if __name__ == '__main__':
-    # consider replacing these values with calls to `os.environ[...]`
+    # @michael - consider replacing these values with calls to `os.environ[...]` for docker build
     kafka_broker = 'localhost:9092'
     upload_api = ''
     cdr_api = 'http://ec2-35-171-47-235.compute-1.amazonaws.com:8090/dart/api/v1/cdrs'
