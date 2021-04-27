@@ -111,7 +111,7 @@ def run_sofia_stream(kafka_broker,
         doc_stream = stream.events()
         async for cdr_event in doc_stream:
             doc_id = cdr_event.key
-            extracted_text = get_cdr_text(doc_id, cdr_api, sofia_user, sofia)
+            extracted_text = get_cdr_text(doc_id, cdr_api, sofia_user, sofia_pwd)
 
             if extracted_text is not None:
                 # @eva - i'm less sure what to do here... you will need to refactor these methods to handle docs
