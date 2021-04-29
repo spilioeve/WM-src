@@ -4,6 +4,7 @@ from sofia import *
 import argparse
 
 
+
 def remove_empty_lines(text_init):
     lines=text_init.split('\n')
     new_lines=[]
@@ -14,23 +15,27 @@ def remove_empty_lines(text_init):
     return '\n'.join(new_lines)
 
 
-def get_cdrs(docs_path, cdr_path, cdr_api, sofia_pwd):
-    docs = os.listdir(docs_path)
-    for doc in docs:
-        thin_cdr = json.load(open(docs_path+'/'+doc))
+def get_cdrs(exp_path, cdr_api, sofia_pwd):
+    docs = os.listdir(exp_path+'/kafka_out')
+    prev_docs = os.listdir(exp_path+'/text')
+    new_docs = list(set(docs)-set(prev_docs))
+    for doc in new_docs:
+        thin_cdr = json.load(open(exp_path+'/kafka_out/'+doc))
         document_id = thin_cdr["document_id"]
         release_date = thin_cdr["timestamp"]
         #cdr_data = json.loads(thin_cdr['cdr-data'])
         #release_date = thin_cdr['release-date']
         #document_id = cdr_data['document_id']
+        doc_path = '{}/{}/{}'.format(exp_path, 'text', doc)
         address = f'{cdr_api}/{document_id}?date={release_date}'
-        os.system('curl -u sofia:{} -o kafka_text_mar21/{} {}'.format(sofia_pwd, doc, address))
-        with open(cdr_path+'/'+doc) as f:
+        os.system('curl -u sofia:{} -o {} {}'.format(sofia_pwd, doc_path, address))
+        with open(doc_path) as f:
             content = json.load(f)
             text = content['extracted_text']
         text_proc = remove_empty_lines(text)
-        with open(cdr_path+'/'+doc, 'w') as f:
+        with open(doc_path, 'w') as f:
             f.write(text_proc)
+    return new_docs
 
 def upload_docs(path, upload_api, sofia_pwd):
     docs= os.listdir(path)
@@ -44,24 +49,25 @@ def upload_docs(path, upload_api, sofia_pwd):
 def run_sofia_online(upload_api, cdr_api, sofia_pwd, ontology, experiment, version, save):
     sofia_path = os.getcwd()
     #docs_path = sofia_path+'/dart_docs'
-    kafka_path = '{}/{}/{}/{}/{}'.format(sofia_path, 'sofia', 'data', experiment, 'kafka_out')
-    text_path = '{}/{}/{}/{}/{}'.format(sofia_path, 'sofia', 'data', experiment, 'text')
-    ann_path = '{}/{}/{}/{}/{}'.format(sofia_path, 'sofia', 'data', experiment, 'annotations')
+
+    exp_path = '{}/{}/{}/{}'.format(sofia_path, 'sofia', 'data', experiment)
+    text_path = exp_path + '/text'
+    ann_path = exp_path+ '/annotations'
 
     print("Downloading CDRS...")
-    get_cdrs(kafka_path, text_path, cdr_api, sofia_pwd)
+    new_docs = get_cdrs(exp_path, cdr_api, sofia_pwd)
 
     print("Preprocessing files with corenlp...")
     sofia = SOFIA(ontology)
-    docs = os.listdir(text_path)
-    for doc in docs:
+
+    for doc in new_docs:
         #if doc != '.DS_Store':
         with open(text_path+'/'+doc) as f:
             text = f.read()
         annotations = sofia.annotate(text, save= save, file_name= ann_path+'/'+doc)
 
     print("Running Sofia...")
-    sofia.get_file_output(ann_path, version, docs=None)
+    sofia.get_file_output(ann_path, version, docs=new_docs)
 
     print("Uploading docs to DART.....")
     output_path = 'sofia/data/{}_output{}'.format(ann_path, version)

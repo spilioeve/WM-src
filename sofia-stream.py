@@ -78,12 +78,11 @@ def upload_sofia_output(doc_id, file, output_api, sofia_user, sofia_pass):
     if response.status_code == 201:
         # @eva - processing is complete and successful, you can either log this or ignore it
         print("File uploaded!")
-        pass
     else:
         # @eva - this means uploading the output failed, you should log this and implement any kind of retry or recovery
         # logic here...
+
         print(f"Uploading of {doc_id} failed! Please re-try")
-        pass
 
 
 def run_sofia_stream(kafka_broker,
@@ -122,6 +121,7 @@ def run_sofia_stream(kafka_broker,
                 sofia.get_online_output(extracted_text, experiment= experiment, file_name= f'{doc_id}_{version}')
                 upload_sofia_output(doc_id, f'sofia/data/{experiment}_output/{file_name}.json', upload_api, sofia_user,
                                     sofia_pass)
+
                 # upload file, etc...
 
     app.main()
@@ -138,4 +138,6 @@ if __name__ == '__main__':
     experiment = 'may2021'
     version = 'v1'
     save = False
+
     run_sofia_stream(kafka_broker, upload_api, cdr_api, sofia_user, sofia_pass, experiment, version, save)
+
