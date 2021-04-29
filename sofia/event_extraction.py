@@ -21,7 +21,7 @@ class CandidateEvents:
             self.ontology = Ontology(refiner)
         else:
             self.ontology = None
-        self.frameNet= FrameNetFrames(external=True)
+        self.frameNet= FrameNetFrames()
 
 
     def overlap(self, span, keys):

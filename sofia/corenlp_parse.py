@@ -152,3 +152,5 @@ class DataExtractor:
         data= self.structuredData[index]
         spans= data['spans']
         return (spans[0][0], spans[-1][1])
+
+

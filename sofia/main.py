@@ -14,6 +14,8 @@ import pdb
 import corenlp
 import pandas as pd
 import argparse
+from os.path import exists
+from os import makedirs
 
 
 def span_to_index(local_index, span_list):
@@ -94,7 +96,7 @@ class SOFIA:
         lemmas= data_extractor.get_lemmas(s_index)
         pos= data_extractor.get_pos_tags(s_index)
         sentence_span= data_extractor.get_sentence_span(s_index)
-        first_char = data_extractor.get_sentence_first_char(s_index)
+
 
         entity_local_index = {}
         entity_scores={}
@@ -109,7 +111,7 @@ class SOFIA:
             if query_finder!= 'None':
                 score= query_finder.rank_node(entity, 'entity', sentence)
                 entity_scores[entity_index] = score
-            entity_info = [str(file_name), query, str(score), entity_index, span, (int(span[0])-first_char, int(span[1])-first_char),
+            entity_info = [str(file_name), query, str(score), entity_index, span, (int(span[0])-sentence_span[0], int(span[1])-sentence_span[0]),
                            entity["trigger"].lower(), entity["frame"],
                        str(entity["frame_FN"]), str(scores), entity['qualifier'].lower(), sentence]
             output['Entities'].append(dict(zip(self.entity_headers,entity_info)))
@@ -134,7 +136,7 @@ class SOFIA:
                 score = query_finder.rank_node(event, 'event', sentence)
             event_scores[event_index] = score
 
-            event_info = [str(file_name), query, str(score), event_index, span, (int(span[0])-first_char, int(span[1])-first_char),
+            event_info = [str(file_name), query, str(score), event_index, span, (int(span[0])-sentence_span[0], int(span[1])-sentence_span[0]),
                           event["trigger"], event["frame"],
                          str(event["frame_FN"]), str(scores), event['location'],
                              event['temporal'], agent, event['agent'][1], patient, event['patient'][1], sentence]
@@ -167,12 +169,23 @@ class SOFIA:
             output['Causal'].append(dict(zip(self.causal_headers,causal_info)))
         return output
 
-    def get_online_output(self, text, file_name='user_input', scoring = False):
+    def get_online_output(self, text, experiment='generic', file_name='user_input', scoring = False):
         #if text!= None:
-        annotations = self.annotate(text)
-        data_extractor = DataExtractor(annotations)
-        output = self.get_output(data_extractor, file_name, scoring = scoring)
-        return output
+        if not exists(f'sofia/data/{experiment}_output'):
+            makedirs(f'sofia/data/{experiment}_output')
+        try:
+            annotations = self.annotate(text)
+            data_extractor = DataExtractor(annotations)
+            output = self.get_output(data_extractor, file_name, scoring=scoring)
+
+            data= {'entities': self.flatten([i['Entities'] for i in output]),
+                         'events': self.flatten([i['Events'] for i in output]),
+                         'causal': self.flatten([i['Causal'] for i in output])}
+            json.dump(data,
+                      open(f'sofia/data/{experiment}_output/{file_name}.json', 'w'))
+        except:
+            print("Issue with file....")
+
     
     def annotate(self, text, save= False, file_name= 'trial'):
         annotations = self.CoreNLPclient.annotate(text, output_format='json')
