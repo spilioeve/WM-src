@@ -19,7 +19,7 @@ def create_kafka_app(broker, user, pwd):
             password=pwd,
             ssl_context=ssl.create_default_context()
         )
-
+    
     # create your application
     app = faust.App(
         'sofia',
@@ -29,7 +29,7 @@ def create_kafka_app(broker, user, pwd):
         topic_disable_leader=True,
         consumer_auto_offset_reset='earliest'
     )
-
+    
     return app
 
 
@@ -57,6 +57,7 @@ def get_cdr_text(doc_id, cdr_api, sofia_user, sofia_pass):
         return remove_empty_lines(cdr_json['extracted_text'])
     else:
         # @eva - TODO - this is an error, you should log any error messages or perform any kind of recovery here
+        print("Retrieving cdr failed. Please re-try.")
         return None
 
 
@@ -101,10 +102,10 @@ def run_sofia_stream(kafka_broker,
 
     # if not exists(corenlp_annotated):
     #     makedirs(corenlp_annotated)
-
+    print("second_pass")
     app = create_kafka_app(kafka_broker, sofia_user, sofia_pwd)
     dart_update_topic = app.topic("dart.cdr.streaming.updates", key_type=str, value_type=str)
-
+    
     # @eva - this is the function that will be called each time the kafka consumer receives a message
     # this is the "body" of the consumer loop
     @app.agent(dart_update_topic)
@@ -113,7 +114,7 @@ def run_sofia_stream(kafka_broker,
         async for cdr_event in doc_stream:
             doc_id = cdr_event.key
             extracted_text = get_cdr_text(doc_id, cdr_api, sofia_user, sofia_pwd)
-
+            print("fourth")
             if extracted_text is not None:
                 # @eva - i'm less sure what to do here... you will need to refactor these methods to handle docs
                 # on a doc by doc basis instead of dealing with directories of docs
@@ -130,7 +131,7 @@ def run_sofia_stream(kafka_broker,
 if __name__ == '__main__':
     # @michael - consider replacing these values with calls to `os.environ[...]` for docker build
     kafka_broker = 'localhost:9092'
-    upload_api = ''
+    upload_api = 'https://wm-ingest-pipeline-rest-1.prod.dart.worldmodelers.com/dart/api/v1/wm-readers/reader/upload' 
     cdr_api = 'http://ec2-35-171-47-235.compute-1.amazonaws.com:8090/dart/api/v1/cdrs'
     sofia_user = None
     sofia_pass = None
@@ -138,6 +139,6 @@ if __name__ == '__main__':
     experiment = 'may2021'
     version = 'v1'
     save = False
-
+    
     run_sofia_stream(kafka_broker, upload_api, cdr_api, sofia_user, sofia_pass, experiment, version, save)
 
