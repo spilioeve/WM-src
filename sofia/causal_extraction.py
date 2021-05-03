@@ -42,11 +42,13 @@ class CausalLinks:
         if len(self.events)<2:
             return []
         # Hard Triggers
-        causal={'CauseEffect':['impact', 'affect', 'drive', 'lead', 'result'], 'EffectCause':['because', 'due']}
+        causal={'CauseEffect':['impact', 'affect', 'drive', 'lead', 'result', 'cause', 'so', 'hence', 'consequence'],
+                'EffectCause':['because', 'due', 'since', 'as']}
         ##Add constraint that preventive triggers must also be verbs???
         # What about correlation triggers?
         ## Soft triggers
         preventive = ['prevent', 'limit', 'restrict', 'constrain', 'block', 'bind', 'regulate']
+        quantitative_triggers = ['increase', 'decrease', 'reduce', 'boost', 'drop']
         # Hard or soft?
         correlation = ['relate', 'influence', 'correlate']
         for index in range(len(lemmas)):
@@ -66,6 +68,8 @@ class CausalLinks:
                         triggers.append((index, "left", 'PreventRelation'))
             elif lemma in correlation:
                 triggers.append((index, "left", 'CorrelateRelation'))
+            elif lemma in quantitative_triggers:
+                triggers.append((index, "left", 'Increase/Decrease'))
         for span in self.events2:
             index=self.events2[span]['index']
             triggers.append((index, "left", "Catalyst/Mitigator/Precondition"))
@@ -73,7 +77,7 @@ class CausalLinks:
 
     def set_bounds(self):
         bounds={}
-        bound_index = [0, len(self.tokens)]
+        bound_index = [-1, len(self.tokens)] ###Changed that
         for trigger in self.triggers:
             index= trigger[0]
             bound_index.append(index)

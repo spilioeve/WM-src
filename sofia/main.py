@@ -61,13 +61,8 @@ class SOFIA:
         self.causal_index = 0
         self.ontology = ontology
         os.environ['CORENLP_HOME'] = CoreNLP
-        self.CoreNLPclient = corenlp.CoreNLPClient(annotators=['tokenize', 
-                                                               'ssplit', 
-                                                               'pos', 
-                                                               'parse', 
-                                                               'lemma', 
-                                                               'ner', 
-                                                               'depparse'])
+        self.CoreNLPclient = corenlp.CoreNLPClient(annotators=['tokenize', 'ssplit', 'pos', 'parse', 'lemma', 'ner',
+                    'depparse'], timeout=50000, memory='10G', threads=4, max_char_length=100)
 
     def get_output(self, data_extractor, file_name, scoring = False):
         output = []
@@ -96,8 +91,6 @@ class SOFIA:
         lemmas= data_extractor.get_lemmas(s_index)
         pos= data_extractor.get_pos_tags(s_index)
         sentence_span= data_extractor.get_sentence_span(s_index)
-
-
         entity_local_index = {}
         entity_scores={}
         output['Entities'] = []
@@ -183,8 +176,10 @@ class SOFIA:
                          'causal': self.flatten([i['Causal'] for i in output])}
             json.dump(data,
                       open(f'sofia/data/{experiment}_output/{file_name}.json', 'w'))
+            return data
         except:
             print("Issue with file....")
+            return None
 
     
     def annotate(self, text, save= False, file_name= 'trial'):
