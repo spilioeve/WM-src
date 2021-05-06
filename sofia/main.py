@@ -1,21 +1,21 @@
-from sofia.event_extraction import CandidateEvents
-from sofia.causal_extraction import CausalLinks
-from sofia.ontology_mapping import Ontology
-from sofia.query_search import QueryFinder
-from sofia.corenlp_parse import DataExtractor
+import json
 # from event_extraction import CandidateEvents
 # from causal_extraction import CausalLinks
 # from ontology_mapping import Ontology
 # from query_search import QueryFinder
 # from corenlp_parse import DataExtractor
 import os
-import json
-import pdb
+from os import makedirs
+from os.path import exists
+
 import corenlp
 import pandas as pd
-import argparse
-from os.path import exists
-from os import makedirs
+
+from sofia.causal_extraction import CausalLinks
+from sofia.corenlp_parse import DataExtractor
+from sofia.event_extraction import CandidateEvents
+from sofia.ontology_mapping import Ontology
+from sofia.query_search import QueryFinder
 
 
 def span_to_index(local_index, span_list):
@@ -46,7 +46,7 @@ class SOFIA:
        The final line writes this output to an Excel file at the user specified path.
     """
 
-    def __init__(self, ontology, CoreNLP='/Users/evangeliaspiliopoulou/Desktop/stanfordCoreNLP'):
+    def __init__(self, ontology):
         self.causal_headers = ["Source_File", 'Query', "Score",  "Span", "Relation Index", "Relation", "Relation_Type",
                                "Indicator", "Cause Index", "Cause", "Effect Index", "Effect", "Sentence"]
         self.event_headers = ["Source_File", 'Query', "Score", "Event Index", "Span", "Sentence Span","Relation", "Event_Type",
@@ -60,9 +60,22 @@ class SOFIA:
         self.variable_index = 0
         self.causal_index = 0
         self.ontology = ontology
-        os.environ['CORENLP_HOME'] = CoreNLP
-        self.CoreNLPclient = corenlp.CoreNLPClient(annotators=['tokenize', 'ssplit', 'pos', 'parse', 'lemma', 'ner',
-                    'depparse'], timeout=50000, memory='10G', threads=4, max_char_length=100)
+
+        if os.getenv('CORENLP_HOME') is not None and os.getenv('CORENLP_HOME') != '':
+            print(f'using Stanford CoreNLP Server @ {os.getenv("CORENLP_HOME")}')
+            self.CoreNLPclient = corenlp.CoreNLPClient( start_server=True,
+                                                        be_quiet=True,
+                                                        timeout=100000,
+                                                        annotators=['tokenize',
+                                                                   'ssplit',
+                                                                   'pos',
+                                                                   'parse',
+                                                                   'lemma',
+                                                                   'ner',
+                                                                   'depparse'])
+            self.CoreNLPclient.annotate("hello world") # warmup the CoreNLP client and start the java server
+        else:
+            raise ValueError('the "CORENLP_HOME" environment variable is not set, cannot run Stanford CoreNLP Server')
 
     def get_output(self, data_extractor, file_name, scoring = False):
         output = []
@@ -167,6 +180,7 @@ class SOFIA:
         if not exists(f'sofia/data/{experiment}_output'):
             makedirs(f'sofia/data/{experiment}_output')
         try:
+            print('call: get_online_output')
             annotations = self.annotate(text)
             data_extractor = DataExtractor(annotations)
             output = self.get_output(data_extractor, file_name, scoring=scoring)
@@ -174,17 +188,20 @@ class SOFIA:
             data= {'entities': self.flatten([i['Entities'] for i in output]),
                          'events': self.flatten([i['Events'] for i in output]),
                          'causal': self.flatten([i['Causal'] for i in output])}
-            json.dump(data,
-                      open(f'sofia/data/{experiment}_output/{file_name}.json', 'w'))
-            return data
-        except:
-            print("Issue with file....")
+
+            output_file = open(f'sofia/data/{experiment}_output/{file_name}.json', 'w')
+            json.dump(data, output_file)
+            output_file.close()
+            return output_file.name
+        except Exception as e:
+            print(e)
             return None
 
-    
+
     def annotate(self, text, save= False, file_name= 'trial'):
+        print('call: CoreNLPclient.annotate')
         annotations = self.CoreNLPclient.annotate(text, output_format='json')
-        #annotations = self.CoreNLPclient.annotate(text)
+        print('finsh: CoreNLPclient.annotate')
         self.entityIndex = 0
         self.eventIndex = 0
         self.variableIndex = 0
@@ -251,7 +268,7 @@ class SOFIA:
 
     def flatten(self, l):
         return [item for sublist in l for item in sublist]
-    
+
     def results2excel(self, output_path, results):
         variables = [i['Variables'] for i in results]
         entities = self.flatten([i['Entities'] for i in results])
