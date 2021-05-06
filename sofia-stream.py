@@ -38,10 +38,43 @@ def remove_empty_lines(text_init):
     new_lines = []
     for line in lines:
         line = line.strip('\n')
-        if len(line) > 20:
-            new_lines.append(line)
+        line = re.sub(r'[^a-zA-Z0-9_ \n .,/?!@#$%^&*()-:;]', '', line)
+        res_line = re.sub(r'[^\w\s]', '', line)
+        res_line = re.sub("\d+", "", res_line)
+        if len(res_line.split()) > 5 and len(res_line.split())<30:
+            num_english= 0
+            for i in res_line.split():
+                if d.check(i):
+                    num_english+=1
+            if len(res_line.split())-num_english<2:
+                new_lines.append(line)
     return '\n'.join(new_lines)
 
+#TODO: this needs fixing, very hard to strip characters / non-words
+def clean_text(text_init):
+    text_init= remove_empty_lines(text_init)
+    sentences = sent_tokenize(text_init)
+    text=""
+    for sentence in sentences:
+        for letter in sentence:
+            if ord(letter) < 128:
+                if letter != '\n':
+                    text += letter
+        if len(sentence)>0 and sentence[-1]!= '.':
+                text+= '.'
+        text+= '\n'
+    lines = text.split('\n')
+    text_final = ""
+    for line in lines:
+        line = line.strip('\n')
+        sentence = line.strip(' ')
+        if len(sentence.split(' ')) > 30:
+            if '\n' in sentence:
+                i = sentence.index('\n')
+                text_final +=  sentence[:i] + '. ' + sentence[i:]
+        elif len(sentence.split(' ')) > 4:
+            text_final += sentence + '\n'
+    return text_final
 
 def clean_text(text_init):
     text_init = remove_empty_lines(text_init)
@@ -101,7 +134,7 @@ def upload_sofia_output(doc_id, output_filename, output_api, sofia_user, sofia_p
     if sofia_user is not None and sofia_pass is not None:
         http_auth = HTTPBasicAuth(sofia_user, sofia_pass)
 
-    response = requests.post(output_api, files=form_request, auth=http_auth)
+    response = requests.post(upload_api, files=form_request, auth=http_auth)
 
     if response.status_code == 201:
         print("File uploaded!")

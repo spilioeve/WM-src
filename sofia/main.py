@@ -104,8 +104,6 @@ class SOFIA:
         lemmas= data_extractor.get_lemmas(s_index)
         pos= data_extractor.get_pos_tags(s_index)
         sentence_span= data_extractor.get_sentence_span(s_index)
-
-
         entity_local_index = {}
         entity_scores={}
         output['Entities'] = []
