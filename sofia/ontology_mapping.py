@@ -3,8 +3,24 @@ import string
 import os
 import nltk
 from nltk.corpus import stopwords
+import yaml
 
 class Ontology:
+
+    # def __init__(self, ontology):
+    #     self.dir= os.getcwd()
+    #     file_name = '/data/Ontology_{}.json'.format(ontology)
+    #     #file_name = '/data/Ontology_wm.json'
+    #     self.external_ontology=False
+    #     if ontology == 'causex':
+    #         self.external_ontology = True
+    #         file_name = '/data/CauseX_Ontology.json'
+    #     file_path= os.path.dirname(os.path.abspath(file_name)) + file_name
+    #     with open(file_path) as f:
+    #         text = f.read()
+    #         self.ontology= json.loads(text)
+    #     indicator_path = os.path.dirname(os.path.abspath(file_name)) + '/data/Indicators_WorldBank_Full.txt'
+    #     self.indicators_WorldBank= self.get_indicators(indicator_path)
 
     def __init__(self, ontology):
         self.dir= os.getcwd()
@@ -79,3 +95,22 @@ class Ontology:
             if lemma in entities[type]:
                 return type, 'entity'
         return "", ""
+
+    # def format_ontology(self, ontology):
+    #     file_path = os.path.dirname(os.path.abspath(ontology))
+    #     with open(file_path) as file:
+    #         data= yaml.full_load(file)
+    #     new_data= {}
+    #     data= data[0]['wm']
+    #     for i0 in range(len(data)):
+    #         k0 = list(data[i0].keys())[0]
+    #         data_0 = data[i0][k0]
+    #         for i1 in range(len(data_0)):
+    #             k1 = list(data_0[i1].keys())[0]
+    #             data_1 = data_0[i1][k1]
+    #             for i2 in range(len(data_1)):
+    #                 k2 = list(data_1[i2].keys())[0]
+    #                 data_2 = data_1[i2][k2]
+    #                 for i3 in range(len(data_2)):
+    #                     k3 = list(data_2[i3].keys())[0]
+    #                     data_3 = data_2[i3][k3]

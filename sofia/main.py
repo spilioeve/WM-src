@@ -1,9 +1,4 @@
 import json
-# from event_extraction import CandidateEvents
-# from causal_extraction import CausalLinks
-# from ontology_mapping import Ontology
-# from query_search import QueryFinder
-# from corenlp_parse import DataExtractor
 import os
 from os import makedirs
 from os.path import exists
