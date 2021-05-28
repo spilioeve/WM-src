@@ -17,7 +17,7 @@ from sofia import *
 
 lang_encoding_dict = enchant.Dict("en_US")
 
-def create_kafka_app(broker, user, pwd):
+def create_kafka_app(broker, user, pwd, auto_offset_reset, enable_auto_commit):
     credentials = None
     if user is not None and pwd is not None:
         credentials = faust.SASLCredentials(
@@ -32,6 +32,8 @@ def create_kafka_app(broker, user, pwd):
         autodiscover=False,
         broker=broker,
         broker_credentials=credentials,
+        consumer_auto_offset_reset=auto_offset_reset,
+        stream_wait_empty=enable_auto_commit,
         topic_disable_leader=True)
 
     return app
@@ -120,6 +122,8 @@ def upload_sofia_output(doc_id, output_filename, upload_api, sofia_user, sofia_p
 
 
 def run_sofia_stream(kafka_broker,
+                     kafka_auto_offset_reset,
+                     kafka_enable_auto_commit,
                      upload_api,
                      cdr_api,
                      sofia_user,
@@ -129,7 +133,7 @@ def run_sofia_stream(kafka_broker,
                      version):
     sofia = SOFIA(ontology)
 
-    app = create_kafka_app(kafka_broker, sofia_user, sofia_pass)
+    app = create_kafka_app(kafka_broker, sofia_user, sofia_pass, kafka_auto_offset_reset, kafka_enable_auto_commit )
     dart_update_topic = app.topic("dart.cdr.streaming.updates", key_type=str, value_type=str)
 
     @app.agent(dart_update_topic)
@@ -149,6 +153,8 @@ def run_sofia_stream(kafka_broker,
 if __name__ == '__main__':
     datetime_slug = datetime.now().strftime("%m/%d/%Y-%H:%M:%S")
     _kafka_broker = os.getenv('KAFKA_BROKER') if os.getenv('KAFKA_BROKER') is not None else 'localhost:9092'
+    _kafka_auto_offset_reset = os.getenv('KAFKA_AUTO_OFFSET_RESET') if os.getenv('KAFKA_AUTO_OFFSET_RESET') is not None else 'latest'
+    _kafka_enable_auto_commit = os.getenv('ENABLE_AUTO_COMMIT') if os.getenv('ENABLE_AUTO_COMMIT') is not None else True
     _upload_api = os.getenv('UPLOAD_API_URL') if os.getenv('UPLOAD_API_URL') is not None else 'localhost:1337'
     _cdr_api = os.getenv('CDR_API_URL') if os.getenv('CDR_API_URL') is not None else 'localhost:8090'
     _sofia_user = os.getenv('SOFIA_USER')
@@ -157,4 +163,13 @@ if __name__ == '__main__':
     _experiment = os.getenv('EXPERIMENT') if os.getenv('EXPERIMENT') is not None else f'test-{datetime_slug}'
     _version = os.getenv('VERSION') if os.getenv('VERSION') is not None else 'v1'
 
-    run_sofia_stream(_kafka_broker, _upload_api, _cdr_api, _sofia_user, _sofia_pass, _ontology, _experiment, _version)
+    run_sofia_stream(_kafka_broker,
+                     _kafka_auto_offset_reset,
+                     _kafka_enable_auto_commit,
+                     _upload_api,
+                     _cdr_api,
+                     _sofia_user,
+                     _sofia_pass,
+                     _ontology,
+                     _experiment,
+                     _version)
