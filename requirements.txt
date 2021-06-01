@@ -10,3 +10,4 @@ APScheduler==3.5.3
 redis==3.0.1
 faust
 requests
+PyYAML
