@@ -40,7 +40,7 @@ def get_cdrs(exp_path, cdr_api, sofia_pwd):
 def upload_docs(path, upload_api, sofia_pwd):
     docs= os.listdir(path)
     command1 = 'curl --location --user sofia:{} --request POST {} --form file=@'.format(sofia_pwd, upload_api)
-    command2 = ''' --form 'metadata={ "identity": "sofia", "version": "1.1", "document_id": "'''
+    command2 = ''' --form 'metadata={ "identity": "sofia", "version": "1.2", "document_id": "'''
     for doc in docs:
         command = command1 + path + doc  + command2 + doc[:-5] + '"}' + "'"
         os.system(command)

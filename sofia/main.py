@@ -41,7 +41,7 @@ class SOFIA:
        The final line writes this output to an Excel file at the user specified path.
     """
 
-    def __init__(self, ontology):
+    def __init__(self, ontology_name):
         self.causal_headers = ["Source_File", 'Query', "Score",  "Span", "Relation Index", "Relation", "Relation_Type",
                                "Indicator", "Cause Index", "Cause", "Effect Index", "Effect", "Sentence"]
         self.event_headers = ["Source_File", 'Query', "Score", "Event Index", "Span", "Sentence Span","Relation", "Event_Type",
@@ -54,7 +54,7 @@ class SOFIA:
         self.event_index = 0
         self.variable_index = 0
         self.causal_index = 0
-        self.ontology = ontology
+        self.ontology_name = ontology_name
 
         if os.getenv('CORENLP_HOME') is not None and os.getenv('CORENLP_HOME') != '':
             print(f'using Stanford CoreNLP Server @ {os.getenv("CORENLP_HOME")}')
@@ -74,7 +74,7 @@ class SOFIA:
 
     def get_output(self, data_extractor, file_name, scoring = False):
         output = []
-        eventReader = CandidateEvents(data_extractor, self.ontology)
+        eventReader = CandidateEvents(data_extractor, self.ontology_name)
         num_sentences = data_extractor.get_data_size()
         all_events, all_entities = eventReader.get_semantic_units()
         self.eventReader = eventReader
@@ -89,7 +89,7 @@ class SOFIA:
     def sentence_output(self, file_name, data_extractor, s_index, events, entities, query, query_finder, scoring = False):
         output = {}
         sentence= data_extractor.sentences[s_index]
-        ontology = Ontology(self.ontology)
+        ontology = Ontology(self.ontology_name)
         self.variable_index += 1
         variable_index = 'V{}'.format(self.variable_index)
         scores=''
@@ -219,7 +219,7 @@ class SOFIA:
             try:
                 annotations = self.load_annotations(doc)
                 data_extractor = DataExtractor(annotations)
-                eventReader = CandidateEvents(data_extractor, self.ontology)
+                eventReader = CandidateEvents(data_extractor, self.ontology_name)
                 for query in queryList:
                     query_finder= QueryFinder(annotations, query)
                     data = eventReader.get_semantic_units()

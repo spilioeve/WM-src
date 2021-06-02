@@ -22,25 +22,23 @@ class Ontology:
     #     indicator_path = os.path.dirname(os.path.abspath(file_name)) + '/data/Indicators_WorldBank_Full.txt'
     #     self.indicators_WorldBank= self.get_indicators(indicator_path)
 
-    def __init__(self, ontology):
+    def __init__(self, ontology_name):
         self.dir= os.getcwd()
-        file_name = '/data/Ontology_{}.json'.format(ontology)
+        file_name = '/data/Ontology_{}.json'.format(ontology_name)
         #file_name = '/data/Ontology_wm.json'
         self.external_ontology=False
-        if ontology == 'causex':
+        if ontology_name == 'causex':
             self.external_ontology = True
             file_name = './data/CauseX_Ontology.json'
-        self.file = os.path.dirname(os.path.abspath(__file__)) + file_name
-        self.ontology= self.get_ontology_data()
+        file = os.path.dirname(os.path.abspath(__file__)) + file_name
+        if not os.path.exists(file):
+            self.format_ontology(ontology_name)
+        with open(file) as f:
+            text = f.read()
+            self.ontology= json.loads(text)
         indicator_path = os.path.dirname(os.path.abspath(__file__)) + '/data/Indicators_WorldBank_Full.txt'
         self.indicators_WorldBank= self.get_indicators(indicator_path)
 
-    def get_ontology_data(self):
-        f= open(self.file)
-        text= f.read()
-        data=json.loads(text)
-        f.close()
-        return data
 
     def get_indicators(self, path):
         f= open(path)
@@ -96,21 +94,28 @@ class Ontology:
                 return type, 'entity'
         return "", ""
 
-    # def format_ontology(self, ontology):
-    #     file_path = os.path.dirname(os.path.abspath(ontology))
-    #     with open(file_path) as file:
-    #         data= yaml.full_load(file)
-    #     new_data= {}
-    #     data= data[0]['wm']
-    #     for i0 in range(len(data)):
-    #         k0 = list(data[i0].keys())[0]
-    #         data_0 = data[i0][k0]
-    #         for i1 in range(len(data_0)):
-    #             k1 = list(data_0[i1].keys())[0]
-    #             data_1 = data_0[i1][k1]
-    #             for i2 in range(len(data_1)):
-    #                 k2 = list(data_1[i2].keys())[0]
-    #                 data_2 = data_1[i2][k2]
-    #                 for i3 in range(len(data_2)):
-    #                     k3 = list(data_2[i3].keys())[0]
-    #                     data_3 = data_2[i3][k3]
+    def format_ontology(self, ontology_name):
+        file_path = os.path.dirname(os.path.abspath(ontology_name))
+        with open(file_path) as file:
+            data= yaml.full_load(file)
+        data = data[0]['wm']
+        path= 'base_path'
+        output = {'entity': {}, 'event': {}, 'property': {}}
+        output = recurse(data, path, output)
+        return output
+
+
+def recurse(data, path, output):
+    for i in range(len(data)):
+        if 'OntologyNode' in data[i].keys():
+            semantic_type = data[i]['semantic type']
+            path_new = "{}/{}".format(path, data[i]['name'])
+            output[semantic_type][path_new] = data[i]['examples']
+            #return output
+        else:
+            k = list(data[i].keys())[0]
+            data_new = data[i][k]
+            path_new = "{}/{}".format(path, k)
+            output_new= recurse(data_new, path_new, output)
+            for j in output_new: output[j].update(output_new[j])
+    return output
