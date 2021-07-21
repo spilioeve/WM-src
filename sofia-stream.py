@@ -100,11 +100,12 @@ def get_cdr_text(doc_id, cdr_api, sofia_user, sofia_pass):
         return None
 
 
-def upload_sofia_output(doc_id, output_filename, upload_api, sofia_user, sofia_pass):
+def upload_sofia_output(doc_id, output_filename, upload_api, sofia_user, sofia_pass, ontology_version):
     metadata = {
         "identity": "sofia",
-        "version": "1.1",
-        "document_id": doc_id
+        "version": "1.3",
+        "document_id": doc_id,
+        "output_version": ontology_version #Ontology version, modify 2.2?
     }
 
     form_request = {"file": (output_filename, open(output_filename)), "metadata": (None, json.dumps(metadata), 'application/json')}
@@ -132,7 +133,7 @@ def run_sofia_stream(kafka_broker,
                      experiment,
                      version):
     sofia = SOFIA(ontology)
-
+    ontology_version = ontology.split('_')[1]
     app = create_kafka_app(kafka_broker, sofia_user, sofia_pass, kafka_auto_offset_reset, kafka_enable_auto_commit )
     dart_update_topic = app.topic("dart.cdr.streaming.updates", key_type=str, value_type=str)
 
@@ -143,9 +144,9 @@ def run_sofia_stream(kafka_broker,
             doc_id = cdr_event.key
             extracted_text = get_cdr_text(doc_id, cdr_api, sofia_user, sofia_pass)
             if extracted_text is not None:
-                output = sofia.get_online_output(extracted_text, experiment=experiment, file_name=f'{doc_id}_{version}')
+                output = sofia.get_online_output(extracted_text, doc_id, experiment=experiment, save= False)
                 if output is not None:
-                    upload_sofia_output(doc_id, output, upload_api, sofia_user, sofia_pass)
+                    upload_sofia_output(doc_id, output, upload_api, sofia_user, sofia_pass, ontology_version)
 
     app.main()
 
@@ -159,7 +160,7 @@ if __name__ == '__main__':
     _cdr_api = os.getenv('CDR_API_URL') if os.getenv('CDR_API_URL') is not None else 'localhost:8090'
     _sofia_user = os.getenv('SOFIA_USER')
     _sofia_pass = os.getenv('SOFIA_PASS')
-    _ontology = os.getenv('ONTOLOGY') if os.getenv('ONTOLOGY') is not None else 'compositional'
+    _ontology = os.getenv('ONTOLOGY') if os.getenv('ONTOLOGY') is not None else 'compositional_2.2'
     _experiment = os.getenv('EXPERIMENT') if os.getenv('EXPERIMENT') is not None else f'test-{datetime_slug}'
     _version = os.getenv('VERSION') if os.getenv('VERSION') is not None else 'v1'
 

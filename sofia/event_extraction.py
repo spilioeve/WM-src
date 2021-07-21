@@ -3,7 +3,6 @@ from sofia.ontology_mapping import Ontology
 
 
 
-
 targetN= ['sudan', 'famine', 'food', 'hunger', 'drought', 'nutrition']
 targetV= ['affect', 'cause', 'focus', 'need', 'suffer', 'occur']
 aux= ['be', 'can', 'could', 'dare', 'do', 'have', 'may', 'might', 'must', 'ought', 'shall', 'should', 'will', 'would']
@@ -64,9 +63,9 @@ class CandidateEvents:
                     else:
                         frame= frame_FN
                         lemma_type= lemma_type_FN
-                if lemma_type_FN=="event" or lemma_type[:-1]== "event":
+                if lemma_type_FN=="event" or lemma_type=="event" or lemma_type=="property":
                     token= tokens[i]
-                    if lemma_type=='event2':
+                    if lemma_type=='property':
                         s_events2[span] = {"trigger": token["token"], "lemma": lemmas[i], "index": i,
                                                 "frame": frame, 'frame_FN': frame_FN, "temporal": data["temporal"],
                                                 "location": data["location"]}
@@ -75,13 +74,16 @@ class CandidateEvents:
                         s_events[span] ={"trigger": token["token"], "lemma": lemmas[i], "index": i, "frame": frame,
                                          'frame_FN': frame_FN, "temporal": data["temporal"], "location": data["location"]}
                         s_events[span].update(srl_output)
+        properties = {}
         for span in s_events2.keys():
-            e_index=s_events2[span]['index']
-            mapped=dict(entities)
-            mapped.update(s_events)
-            srl_output = self.get_dependencies(s_index, e_index + 1, mapped)
-            s_events2[span].update(srl_output)
-        return s_events2, s_events
+            if 'index' in s_events2[span]:
+                e_index= s_events2[span]['index']
+                mapped=dict(entities)
+                mapped.update(s_events)
+                srl_output = self.get_dependencies(s_index, e_index + 1, mapped)
+                s_events2[span].update(srl_output)
+                properties[span] = s_events2[span]
+        return properties, s_events
 
     def get_semantic_units(self):
         #events2=[]
@@ -155,6 +157,8 @@ class CandidateEvents:
         data = self.data_extractor.get_sentence_data(s_index)
         sentence = data["sentence"]
         nominals = data["NPs"]
+        lemmas = data['lemmas']
+        #Missing index variable??
         for noun_phrase in nominals:
             span= (noun_phrase['start'], noun_phrase['end'])
             head_lemma = noun_phrase['head_lemma']
@@ -176,17 +180,17 @@ class CandidateEvents:
                 else:
                     frame_lemma= frame_lemma_FN
                     lemma_type= lemma_type_FN
-                if lemma_type_FN=="event" or lemma_type[:-1]=="event":
+                if lemma_type_FN=="event" or lemma_type=="event" or lemma_type=="property":
                     event_span= (event['start'], event['end'])
-                    if lemma_type== 'event2':
+                    if lemma_type== 'property':
                         events2[event_span]= {'trigger': event['token'], 'location': data['location'],
                                         'temporal': data['temporal'], 'frame': frame_lemma, 'frame_FN': frame_lemma_FN}
                     else:
                         events[event_span]= {'trigger': event['token'], 'location': data['location'],
                                             'temporal': data['temporal'], 'patient': ([span], noun_phrase['token']),
                                              'agent':(0, ""), 'frame': frame_lemma, 'frame_FN': frame_lemma_FN}
-            elif head_type_FN=="event" or head_type[:-1]=="event":
-                if head_type== 'event2':
+            elif head_type_FN=="event" or head_type=="event" or head_type=="property":
+                if head_type== 'property':
                     events2[span] = {'trigger': noun_phrase['text'], 'frame': frames_head, 'frame_FN': frames_head_FN,
                                      'location': data['location'], 'temporal': data['temporal']}
                 else:

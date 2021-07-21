@@ -24,7 +24,7 @@ class Ontology:
 
     def __init__(self, ontology_name):
         self.dir= os.getcwd()
-        file_name = '/data/Ontology_{}.json'.format(ontology_name)
+        file_name = f'/data/Ontology_{ontology_name}.json'
         #file_name = '/data/Ontology_wm.json'
         self.external_ontology=False
         if ontology_name == 'causex':
@@ -32,7 +32,7 @@ class Ontology:
             file_name = './data/CauseX_Ontology.json'
         file = os.path.dirname(os.path.abspath(__file__)) + file_name
         if not os.path.exists(file):
-            self.format_ontology(ontology_name)
+            self.format_ontology(ontology_name, file)
         with open(file) as f:
             text = f.read()
             self.ontology= json.loads(text)
@@ -82,26 +82,30 @@ class Ontology:
 
     def refine_word(self, sentence, lemma, pos):
         #if self.externalOntology: return self.refineWord_external(sentence, lemma, pos, fnFrames)
-        events1, events2, entities= self.ontology['events1'], self.ontology['events2'], self.ontology['entities']
+        events1, events2, entities= self.ontology['event'], self.ontology['property'], self.ontology['entity']
         for type in events1.keys():
             if lemma in events1[type]:
-                return 'event1/'+type, 'event1'
+                return 'event/'+type, 'event'
         for type in events2.keys():
             if lemma in events2[type]:
-                return 'event2/'+type, 'event2'
+                return 'property/'+type, 'property'
         for type in entities.keys():
             if lemma in entities[type]:
                 return type, 'entity'
         return "", ""
 
-    def format_ontology(self, ontology_name):
-        file_path = os.path.dirname(os.path.abspath(ontology_name))
-        with open(file_path) as file:
-            data= yaml.full_load(file)
+    def format_ontology(self, ontology_name, save_file):
+        file_name = f'/data/Ontology_{ontology_name}.yml'
+        #file_path = os.path.dirname(os.path.abspath(file_name))+file_name
+        file = os.path.dirname(os.path.abspath(__file__)) + file_name
+        with open(file) as f:
+            data= yaml.full_load(f)
         data = data[0]['wm']
         path= 'base_path'
         output = {'entity': {}, 'event': {}, 'property': {}}
         output = recurse(data, path, output)
+        with open(save_file, 'w') as f:
+            json.dump(output, f)
         return output
 
 
