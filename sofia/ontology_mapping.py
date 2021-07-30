@@ -95,7 +95,7 @@ class Ontology:
         return "", ""
 
     def format_ontology(self, ontology_name, save_file):
-        file_name = f'/data/Ontology_{ontology_name}.yml'
+        file_name = f'/data/{ontology_name}.yml'
         #file_path = os.path.dirname(os.path.abspath(file_name))+file_name
         file = os.path.dirname(os.path.abspath(__file__)) + file_name
         with open(file) as f:
