@@ -119,7 +119,7 @@ def upload_sofia_output(doc_id, output_filename, upload_api, sofia_user, sofia_p
     if response.status_code == 201:
         print( f'uploaded - {output_filename} for doc {doc_id}')
     else:
-        print(f"Uploading of {doc_id} failed! Please re-try")
+        print(f"Uploading of {doc_id} failed with status code {response.status_code}! Please re-try")
 
 
 def run_sofia_stream(kafka_broker,
