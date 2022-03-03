@@ -42,7 +42,9 @@ class Ontology:
         print( f'using ontology {filename}' )
 
         if not os.path.exists(filename):
+            print('formatting ontology...')
             self.format_ontology(ontology_name, filename)
+            print('ontology formatted...')
         with open(filename) as f:
             text = f.read()
             self.ontology = json.loads(text)
@@ -110,6 +112,7 @@ class Ontology:
             file = os.path.dirname(os.path.abspath(__file__)) + file_name
 
         with open(file) as f:
+            print(f'loading yaml for ontology {file}')
             data = yaml.full_load(f)
         data = data[0]['wm']
         path = 'base_path'
