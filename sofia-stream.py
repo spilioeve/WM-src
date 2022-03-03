@@ -159,8 +159,7 @@ def run_sofia_stream(kafka_broker,
 if __name__ == '__main__':
     datetime_slug = datetime.now().strftime("%m/%d/%Y-%H:%M:%S")
     _kafka_broker = os.getenv('KAFKA_BROKER') if os.getenv('KAFKA_BROKER') is not None else 'localhost:9092'
-    _kafka_auto_offset_reset = os.getenv('KAFKA_AUTO_OFFSET_RESET') if os.getenv(
-        'KAFKA_AUTO_OFFSET_RESET') is not None else 'latest'
+    _kafka_auto_offset_reset = os.getenv('KAFKA_AUTO_OFFSET_RESET') if os.getenv('KAFKA_AUTO_OFFSET_RESET') is not None else 'latest'
     _kafka_enable_auto_commit = os.getenv('ENABLE_AUTO_COMMIT') if os.getenv('ENABLE_AUTO_COMMIT') is not None else True
     _upload_api = os.getenv('UPLOAD_API_URL') if os.getenv('UPLOAD_API_URL') is not None else 'localhost:1337'
     _cdr_api = os.getenv('CDR_API_URL') if os.getenv('CDR_API_URL') is not None else 'localhost:8090'
