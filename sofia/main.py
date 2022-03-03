@@ -15,15 +15,16 @@ from sofia.query_search import QueryFinder
 
 
 def span_to_index(local_index, span_list):
-    if span_list==0:
+    if span_list == 0:
         return ""
-    index=""
+    index = ""
     for span in span_list:
-        i= local_index[span]
-        if i!= "":
-            index+= i+ ', '
-    index= index.strip(', ')
+        i = local_index[span]
+        if i != "":
+            index += i + ', '
+    index = index.strip(', ')
     return index
+
 
 class SOFIA:
     """SOFIA class. Can be invoked with:
@@ -43,12 +44,14 @@ class SOFIA:
     """
 
     def __init__(self, ontology_name):
-        self.causal_headers = ["Source_File", 'Query', "Score",  "Span", "Relation Index", "Relation", "Relation_Type",
+        self.causal_headers = ["Source_File", 'Query', "Score", "Span", "Relation Index", "Relation", "Relation_Type",
                                "Indicator", "Cause Index", "Cause", "Effect Index", "Effect", "Sentence"]
-        self.event_headers = ["Source_File", 'Query', "Score", "Event Index", "Span", "Sentence Span","Relation", "Event_Type",
+        self.event_headers = ["Source_File", 'Query', "Score", "Event Index", "Span", "Sentence Span", "Relation",
+                              "Event_Type",
                               "FrameNet_Frame", "Indicator", "Location", "Time", 'Agent Index', "Agent",
                               'Patient Index', "Patient", "Sentence"]
-        self.entity_headers = ["Source_File", 'Query', "Score", "Entity Index", "Span", "Sentence Span", "Entity", "Entity_Type",
+        self.entity_headers = ["Source_File", 'Query', "Score", "Entity Index", "Span", "Sentence Span", "Entity",
+                               "Entity_Type",
                                "FrameNet_Frame", "Indicator", "Qualifier", "Sentence"]
         self.variable_headers = ["Source_File", 'Sentence', 'Indicator', 'Scoring', 'Index']
         self.entity_index = 0
@@ -59,68 +62,69 @@ class SOFIA:
 
         if os.getenv('CORENLP_HOME') is not None and os.getenv('CORENLP_HOME') != '':
             print(f'using Stanford CoreNLP Server @ {os.getenv("CORENLP_HOME")}')
-            self.CoreNLPclient = corenlp.CoreNLPClient( start_server=True,
-                                                        be_quiet=True,
-                                                        timeout=100000,
-                                                        annotators=['tokenize',
+            self.CoreNLPclient = corenlp.CoreNLPClient(start_server=True,
+                                                       be_quiet=True,
+                                                       timeout=100000,
+                                                       annotators=['tokenize',
                                                                    'ssplit',
                                                                    'pos',
                                                                    'parse',
                                                                    'lemma',
                                                                    'ner',
                                                                    'depparse'])
-            self.CoreNLPclient.annotate("hello world") # warmup the CoreNLP client and start the java server
+            self.CoreNLPclient.annotate("hello world")  # warmup the CoreNLP client and start the java server
         else:
             raise ValueError('the "CORENLP_HOME" environment variable is not set, cannot run Stanford CoreNLP Server')
 
-    def get_output(self, data_extractor, doc_id, scoring = False):
+    def get_output(self, data_extractor, doc_id, scoring=False):
         output = []
         eventReader = CandidateEvents(data_extractor, self.ontology_name)
         num_sentences = data_extractor.get_data_size()
         all_events, all_entities = eventReader.get_semantic_units()
         self.eventReader = eventReader
         for s_index in range(num_sentences):
-            events= all_events[s_index]
-            entities= all_entities[s_index]
+            events = all_events[s_index]
+            entities = all_entities[s_index]
             sentence_output = self.sentence_output(doc_id, data_extractor, s_index, events, entities, 'None', 'None',
-                                                   scoring = scoring)
+                                                   scoring=scoring)
             output.append(sentence_output)
         return output
 
-    def sentence_output(self, doc_id, data_extractor, s_index, events, entities, query, query_finder, scoring = False):
+    def sentence_output(self, doc_id, data_extractor, s_index, events, entities, query, query_finder, scoring=False):
         output = {}
-        sentence= data_extractor.sentences[s_index]
+        sentence = data_extractor.sentences[s_index]
         ontology = Ontology(self.ontology_name)
         self.variable_index += 1
         variable_index = 'V{}'.format(self.variable_index)
-        scores=''
+        scores = ''
         if scoring:
             scores = ontology.string_matching(sentence, 'WorldBank')
         output['Variables'] = dict(zip(self.variable_headers, [doc_id, sentence, query, str(scores), variable_index]))
-        lemmas= data_extractor.get_lemmas(s_index)
-        pos= data_extractor.get_pos_tags(s_index)
-        sentence_span= data_extractor.get_sentence_span(s_index)
+        lemmas = data_extractor.get_lemmas(s_index)
+        pos = data_extractor.get_pos_tags(s_index)
+        sentence_span = data_extractor.get_sentence_span(s_index)
         entity_local_index = {}
-        entity_scores={}
+        entity_scores = {}
         output['Entities'] = []
         for span in list(entities.keys()):
             self.entity_index += 1
             entity_index = 'N{}'.format(self.entity_index)
             entity = entities[span]
             entity_local_index[span] = entity_index
-            #scores = ontologyMapper.stringMatching(entity["trigger"], 'WorldBank')
-            score=0.0
-            if query_finder!= 'None':
-                score= query_finder.rank_node(entity, 'entity', sentence)
+            # scores = ontologyMapper.stringMatching(entity["trigger"], 'WorldBank')
+            score = 0.0
+            if query_finder != 'None':
+                score = query_finder.rank_node(entity, 'entity', sentence)
                 entity_scores[entity_index] = score
-            entity_info = [doc_id, query, str(score), entity_index, span, (int(span[0])-sentence_span[0], int(span[1])-sentence_span[0]),
+            entity_info = [doc_id, query, str(score), entity_index, span,
+                           (int(span[0]) - sentence_span[0], int(span[1]) - sentence_span[0]),
                            entity["trigger"].lower(), entity["frame"],
-                       str(entity["frame_FN"]), str(scores), entity['qualifier'].lower(), sentence]
-            output['Entities'].append(dict(zip(self.entity_headers,entity_info)))
+                           str(entity["frame_FN"]), str(scores), entity['qualifier'].lower(), sentence]
+            output['Entities'].append(dict(zip(self.entity_headers, entity_info)))
 
         event_local_index = {}
-        event_scores={}
-        event2Spans=[]
+        event_scores = {}
+        event2Spans = []
         output['Events'] = []
         for span in list(events.keys()):
             event = events[span]
@@ -138,23 +142,25 @@ class SOFIA:
                 score = query_finder.rank_node(event, 'event', sentence)
             event_scores[event_index] = score
 
-            event_info = [doc_id, query, str(score), event_index, span, (int(span[0])-sentence_span[0], int(span[1])-sentence_span[0]),
+            event_info = [doc_id, query, str(score), event_index, span,
+                          (int(span[0]) - sentence_span[0], int(span[1]) - sentence_span[0]),
                           event["trigger"], event["frame"],
-                         str(event["frame_FN"]), str(scores), event['location'],
-                             event['temporal'], agent, event['agent'][1], patient, event['patient'][1], sentence]
-            output['Events'].append(dict(zip(self.event_headers,event_info)))
+                          str(event["frame_FN"]), str(scores), event['location'],
+                          event['temporal'], agent, event['agent'][1], patient, event['patient'][1], sentence]
+            output['Events'].append(dict(zip(self.event_headers, event_info)))
         ###############
-        #Does this do anything???
+        # Does this do anything???
         for span in event2Spans:
             event = events[span]
             self.event_index += 1
             event_index = 'E{}'.format(self.event_index)
             event_local_index[span] = event_index
-        #TODO: Fix the Causality Model
+        # TODO: Fix the Causality Model
         #######
-        #It currently chooses ALL the events. This is wrong, it should choose the ones that do not contain others as arguments
-        causal_detector = CausalLinks(events, event_local_index, event2Spans, entities, entity_local_index, sentence, lemmas, pos,
-                       event_scores, entity_scores)
+        # It currently chooses ALL the events. This is wrong, it should choose the ones that do not contain others as arguments
+        causal_detector = CausalLinks(events, event_local_index, event2Spans, entities, entity_local_index, sentence,
+                                      lemmas, pos,
+                                      event_scores, entity_scores)
         causal_relations = causal_detector.get_causal_nodes()  ### OR TRUE
         output['Causal'] = []
         for relation in causal_relations:
@@ -168,27 +174,28 @@ class SOFIA:
                 score = query_finder.rank_node((event_scores, cause[0], effect[0]), 'relation', sentence)
             causal_info = [doc_id, query, str(score), sentence_span, causal_index, relation["trigger"], relation_type,
                            str(scores), cause[0], cause[1], effect[0], effect[1], sentence]
-            output['Causal'].append(dict(zip(self.causal_headers,causal_info)))
+            output['Causal'].append(dict(zip(self.causal_headers, causal_info)))
         return output
 
-    def get_online_output(self, text, doc_id, experiment='generic', save= True, scoring = False):
+    def get_online_output(self, text, doc_id, experiment='generic', save=True, scoring=False):
         print(f'sofia processing started for {doc_id}')
-        #if text!= None:
+        # if text!= None:
         if not exists(f'sofia/data/{experiment}_output'):
             makedirs(f'sofia/data/{experiment}_output')
         try:
-            #Change if new files might come in!
-            #if os.path.exists(f'sofia/data/{experiment}/annotations/{doc_id}.json'):
+            # Change if new files might come in!
+            # if os.path.exists(f'sofia/data/{experiment}/annotations/{doc_id}.json'):
             if os.path.exists(f'sofia/data/{experiment}/annotations'):
                 annotations = self.load_annotations(experiment, doc_id)
             else:
-                annotations = self.annotate(text, experiment, save= save, doc_id= doc_id)
+                print(f'annotating {doc_id} : {len(text)}')
+                annotations = self.annotate(text, experiment, save=save, doc_id=doc_id)
             data_extractor = DataExtractor(annotations)
             output = self.get_output(data_extractor, doc_id, scoring=scoring)
-            #print("output!")
-            data= {'entities': self.flatten([i['Entities'] for i in output]),
-                         'events': self.flatten([i['Events'] for i in output]),
-                         'causal': self.flatten([i['Causal'] for i in output])}
+            # print("output!")
+            data = {'entities': self.flatten([i['Entities'] for i in output]),
+                    'events': self.flatten([i['Events'] for i in output]),
+                    'causal': self.flatten([i['Causal'] for i in output])}
 
             output_file = open(f'sofia/data/{experiment}_output/{doc_id}.json', 'w')
             json.dump(data, output_file)
@@ -198,8 +205,7 @@ class SOFIA:
             print(e)
             return None
 
-
-    def annotate(self, text, experiment, save= 'True', doc_id= 'user_input'):
+    def annotate(self, text, experiment, save='True', doc_id='user_input'):
         annotations = self.CoreNLPclient.annotate(text, output_format='json')
         self.entityIndex = 0
         self.eventIndex = 0
@@ -211,10 +217,10 @@ class SOFIA:
 
     def load_annotations(self, experiment, doc_id):
         if '.json' in doc_id:
-            f=open(f'sofia/data/{experiment}/annotations/{doc_id}')
+            f = open(f'sofia/data/{experiment}/annotations/{doc_id}')
         else:
             f = open(f'sofia/data/{experiment}/annotations/{doc_id}.json')
-        ann=json.loads(f.read())
+        ann = json.loads(f.read())
         f.close()
         return ann
 
@@ -222,22 +228,22 @@ class SOFIA:
         if docs == None: docs = os.listdir(document_path)
         output = []
         for doc in docs:
-            print('Processing doc '+str(doc))
+            print('Processing doc ' + str(doc))
             try:
                 annotations = self.load_annotations(doc)
                 data_extractor = DataExtractor(annotations)
                 eventReader = CandidateEvents(data_extractor, self.ontology_name)
                 for query in queryList:
-                    query_finder= QueryFinder(annotations, query)
+                    query_finder = QueryFinder(annotations, query)
                     data = eventReader.get_semantic_units()
-                    query_sentences= query_finder.find_query()
+                    query_sentences = query_finder.find_query()
                     for index in query_sentences:
-                        sentence_output = self.sentence_output(doc, index, eventReader, data, query, query_finder, False)
+                        sentence_output = self.sentence_output(doc, index, eventReader, data, query, query_finder,
+                                                               False)
                         output.append(sentence_output)
             except:
                 print("Issue with file....")
         self.results2excel('sofia/data/' + output_name + '.xlsx', output)
-
 
     # def get_file_output(self, ann_path, experiment='generic', file_name='user_input', scoring= False):
     #     if docs== None: docs=os.listdir('sofia/data/{}'.format(ann_path))
@@ -263,7 +269,6 @@ class SOFIA:
     #     print('Parsing done')
     #     #self.results2excel('sofia/data/'+output_name+'.xlsx', output)
     #     return data
-
 
     def flatten(self, l):
         return [item for sublist in l for item in sublist]
@@ -291,10 +296,6 @@ class SOFIA:
         # Close the Pandas Excel writer and output the Excel file.
         writer.save()
 
-
-
-
-
 # parser = argparse.ArgumentParser(description='Run Sofia Reader')
 # parser.add_argument('--dataset', type=str, default='dec2020')
 # parser.add_argument('--query_based', type=int, default= 0)
@@ -307,4 +308,4 @@ class SOFIA:
 # experiment = 'aug2021'
 # data = sofia.get_online_output("", doc_id, experiment)
 
-#java -cp "*" -Xmx48g edu.stanford.nlp.pipeline.StanfordCoreNLP --threads 8 -annotators tokenize,ssplit,pos,lemma,parse,ner,depparse -filelist ../june2020_rem/filelist_aug1.txt -outputFormat json -outputDirectory ../june2020_rem/corenlp_aug1
+# java -cp "*" -Xmx48g edu.stanford.nlp.pipeline.StanfordCoreNLP --threads 8 -annotators tokenize,ssplit,pos,lemma,parse,ner,depparse -filelist ../june2020_rem/filelist_aug1.txt -outputFormat json -outputDirectory ../june2020_rem/corenlp_aug1
