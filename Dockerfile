@@ -8,9 +8,7 @@ RUN yum upgrade -y
 
 RUN yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm && \
     yum install -y net-tools which python3 enchant java-1.8.0-openjdk && \
-    curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
-    python3 get-pip.py && \
-    rm get-pip.py && \
+    python3 -m ensurepip --default-pip && \
     yum clean all && \
     rm -r -f /var/cache/yum && \
     mkdir -p /opt/app/{bin,conf,data,pkg,tmp}
@@ -24,10 +22,12 @@ RUN yum install -y unzip && \
     chmod -R u+x $CORENLP_HOME
 
 COPY . /opt/app/bin
-
 RUN chmod -R u+x /opt/app/bin && \
     cd /opt/app/bin && \
-    pip3 install -r requirements.txt && \
-    python3 -m nltk.downloader punkt
+    pip3 install -r requirements.txt
+
+RUN python3 -m nltk.downloader punkt
+
+COPY ontologies/* /opt/app/conf/
 
 ENTRYPOINT /opt/app/bin/sofia-stream.py worker

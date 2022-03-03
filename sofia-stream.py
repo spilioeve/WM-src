@@ -15,7 +15,10 @@ import enchant
 
 from sofia import *
 
+from pathlib import Path
+
 lang_encoding_dict = enchant.Dict("en_US")
+
 
 def create_kafka_app(broker, user, pwd, auto_offset_reset, enable_auto_commit):
     credentials = None
@@ -47,28 +50,29 @@ def remove_empty_lines(text_init):
         line = re.sub(r'[^a-zA-Z0-9_ \n .,/?!@#$%^&*()-:;]', '', line)
         res_line = re.sub(r'[^\w\s]', '', line)
         res_line = re.sub("\d+", "", res_line)
-        if len(res_line.split()) > 5 and len(res_line.split())<30:
-            num_english= 0
+        if len(res_line.split()) > 5 and len(res_line.split()) < 30:
+            num_english = 0
             for i in res_line.split():
                 if lang_encoding_dict.check(i):
-                    num_english+=1
-            if len(res_line.split())-num_english<2:
+                    num_english += 1
+            if len(res_line.split()) - num_english < 2:
                 new_lines.append(line)
     return '\n'.join(new_lines)
 
-#TODO: this needs fixing, very hard to strip characters / non-words
+
+# TODO: this needs fixing, very hard to strip characters / non-words
 def clean_text(text_init):
-    text_init= remove_empty_lines(text_init)
+    text_init = remove_empty_lines(text_init)
     sentences = sent_tokenize(text_init)
-    text=""
+    text = ""
     for sentence in sentences:
         for letter in sentence:
             if ord(letter) < 128:
                 if letter != '\n':
                     text += letter
-        if len(sentence)>0 and sentence[-1]!= '.':
-                text+= '.'
-        text+= '\n'
+        if len(sentence) > 0 and sentence[-1] != '.':
+            text += '.'
+        text += '\n'
     lines = text.split('\n')
     text_final = ""
     for line in lines:
@@ -77,7 +81,7 @@ def clean_text(text_init):
         if len(sentence.split(' ')) > 30:
             if '\n' in sentence:
                 i = sentence.index('\n')
-                text_final +=  sentence[:i] + '. ' + sentence[i:]
+                text_final += sentence[:i] + '. ' + sentence[i:]
         elif len(sentence.split(' ')) > 4:
             text_final += sentence + '\n'
     return text_final
@@ -105,10 +109,11 @@ def upload_sofia_output(doc_id, output_filename, upload_api, sofia_user, sofia_p
         "identity": "sofia",
         "version": "1.3",
         "document_id": doc_id,
-        "output_version": ontology_version #Ontology version, modify 2.2?
+        "output_version": ontology_version
     }
 
-    form_request = {"file": (output_filename, open(output_filename)), "metadata": (None, json.dumps(metadata), 'application/json')}
+    form_request = {"file": (output_filename, open(output_filename)),
+                    "metadata": (None, json.dumps(metadata), 'application/json')}
 
     http_auth = None
     if sofia_user is not None and sofia_pass is not None:
@@ -117,7 +122,7 @@ def upload_sofia_output(doc_id, output_filename, upload_api, sofia_user, sofia_p
     response = requests.post(upload_api, files=form_request, auth=http_auth)
 
     if response.status_code == 201:
-        print( f'uploaded - {output_filename} for doc {doc_id}')
+        print(f'uploaded - {output_filename} for doc {doc_id}')
     else:
         print(f"Uploading of {doc_id} failed with status code {response.status_code}! Please re-try")
 
@@ -133,8 +138,8 @@ def run_sofia_stream(kafka_broker,
                      experiment,
                      version):
     sofia = SOFIA(ontology)
-    ontology_version = ontology.split('_')[1]
-    app = create_kafka_app(kafka_broker, sofia_user, sofia_pass, kafka_auto_offset_reset, kafka_enable_auto_commit )
+    ontology_version = Path(ontology).with_suffix('').name
+    app = create_kafka_app(kafka_broker, sofia_user, sofia_pass, kafka_auto_offset_reset, kafka_enable_auto_commit)
     dart_update_topic = app.topic("dart.cdr.streaming.updates", key_type=str, value_type=str)
 
     @app.agent(dart_update_topic)
@@ -144,7 +149,7 @@ def run_sofia_stream(kafka_broker,
             doc_id = cdr_event.key
             extracted_text = get_cdr_text(doc_id, cdr_api, sofia_user, sofia_pass)
             if extracted_text is not None:
-                output = sofia.get_online_output(extracted_text, doc_id, experiment=experiment, save= False)
+                output = sofia.get_online_output(extracted_text, doc_id, experiment=experiment, save=False)
                 if output is not None:
                     upload_sofia_output(doc_id, output, upload_api, sofia_user, sofia_pass, ontology_version)
 
@@ -154,7 +159,8 @@ def run_sofia_stream(kafka_broker,
 if __name__ == '__main__':
     datetime_slug = datetime.now().strftime("%m/%d/%Y-%H:%M:%S")
     _kafka_broker = os.getenv('KAFKA_BROKER') if os.getenv('KAFKA_BROKER') is not None else 'localhost:9092'
-    _kafka_auto_offset_reset = os.getenv('KAFKA_AUTO_OFFSET_RESET') if os.getenv('KAFKA_AUTO_OFFSET_RESET') is not None else 'latest'
+    _kafka_auto_offset_reset = os.getenv('KAFKA_AUTO_OFFSET_RESET') if os.getenv(
+        'KAFKA_AUTO_OFFSET_RESET') is not None else 'latest'
     _kafka_enable_auto_commit = os.getenv('ENABLE_AUTO_COMMIT') if os.getenv('ENABLE_AUTO_COMMIT') is not None else True
     _upload_api = os.getenv('UPLOAD_API_URL') if os.getenv('UPLOAD_API_URL') is not None else 'localhost:1337'
     _cdr_api = os.getenv('CDR_API_URL') if os.getenv('CDR_API_URL') is not None else 'localhost:8090'
