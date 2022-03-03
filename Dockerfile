@@ -23,7 +23,7 @@ RUN yum install -y unzip && \
 
 
 COPY requirements.txt /opt/app/tmp/
-RUN pip3 install -r requirements.txt && \
+RUN pip3 install -r /opt/app/tmp/requirements.txt && \
     python3 -m nltk.downloader punkt
 
 COPY . /opt/app/bin
