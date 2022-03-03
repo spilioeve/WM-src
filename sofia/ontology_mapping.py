@@ -39,6 +39,8 @@ class Ontology:
             filename = os.path.dirname(os.path.abspath(__file__)) + f'/data/Ontology_{ontology_name}.json'
             self.external_ontology = False
 
+        print( f'using ontology {filename}' )
+
         if not os.path.exists(filename):
             self.format_ontology(ontology_name, filename)
         with open(filename) as f:

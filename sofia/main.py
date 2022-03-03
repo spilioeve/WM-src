@@ -172,6 +172,7 @@ class SOFIA:
         return output
 
     def get_online_output(self, text, doc_id, experiment='generic', save= True, scoring = False):
+        print(f'sofia processing started for {doc_id}')
         #if text!= None:
         if not exists(f'sofia/data/{experiment}_output'):
             makedirs(f'sofia/data/{experiment}_output')

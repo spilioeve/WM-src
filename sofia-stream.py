@@ -97,6 +97,7 @@ def get_cdr_text(doc_id, cdr_api, sofia_user, sofia_pass):
     response = requests.get(url, auth=http_auth)
 
     if response.status_code == 200:
+        print(f'got CDR data for {doc_id}')
         cdr_json = json.loads(response.text)
         return clean_text(cdr_json['extracted_text'])
     else:
