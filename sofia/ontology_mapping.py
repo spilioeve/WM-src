@@ -36,7 +36,7 @@ class Ontology:
             formatted_ontology_file = './data/CauseX_Ontology.json'
         if isabs(ontology_name):
             self.external_ontology = True
-            formatted_ontology_file = f'/opt/app/data/tmp/{Path(ontology_name).with_suffix(".json")}'
+            formatted_ontology_file = f'/opt/app/tmp/{Path(ontology_name).with_suffix(".json")}'
         else:
             formatted_ontology_file = os.path.dirname(os.path.abspath(__file__)) + f'/data/Ontology_{ontology_name}.json'
             self.external_ontology = False
