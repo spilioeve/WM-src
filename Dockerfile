@@ -21,12 +21,14 @@ RUN yum install -y unzip && \
     rm /opt/app/pkg/*.zip && \
     chmod -R u+x $CORENLP_HOME
 
+
+COPY requirements.txt /opt/app/tmp/
+RUN pip3 install -r requirements.txt && \
+    python3 -m nltk.downloader punkt
+
 COPY . /opt/app/bin
 RUN chmod -R u+x /opt/app/bin && \
-    cd /opt/app/bin && \
-    pip3 install -r requirements.txt
-
-RUN python3 -m nltk.downloader punkt
+    cd /opt/app/bin
 
 COPY ontologies/* /opt/app/conf/
 
