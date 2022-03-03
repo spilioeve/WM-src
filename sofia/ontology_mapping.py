@@ -7,6 +7,8 @@ from nltk.corpus import stopwords
 
 from os.path import isabs
 
+from pathlib import Path
+
 
 class Ontology:
 
@@ -28,24 +30,23 @@ class Ontology:
     def __init__(self, ontology_name):
         self.dir = os.getcwd()
 
-        filename = None
+        formatted_ontology_file = None
         if ontology_name == 'causex':
             self.external_ontology = True
-            filename = './data/CauseX_Ontology.json'
+            formatted_ontology_file = './data/CauseX_Ontology.json'
         if isabs(ontology_name):
             self.external_ontology = True
-            filename = ontology_name
+            formatted_ontology_file = f'/opt/app/data/tmp/{Path(ontology_name).with_suffix(".json")}'
         else:
-            filename = os.path.dirname(os.path.abspath(__file__)) + f'/data/Ontology_{ontology_name}.json'
+            formatted_ontology_file = os.path.dirname(os.path.abspath(__file__)) + f'/data/Ontology_{ontology_name}.json'
             self.external_ontology = False
 
-        print( f'using ontology {filename}' )
-
-        if not os.path.exists(filename):
+        print(f'using ontology {formatted_ontology_file}')
+        if not os.path.exists(formatted_ontology_file):
             print('formatting ontology...')
-            self.format_ontology(ontology_name, filename)
+            self.format_ontology(ontology_name, formatted_ontology_file)
             print('ontology formatted...')
-        with open(filename) as f:
+        with open(formatted_ontology_file) as f:
             text = f.read()
             self.ontology = json.loads(text)
         indicator_path = os.path.dirname(os.path.abspath(__file__)) + '/data/Indicators_WorldBank_Full.txt'
