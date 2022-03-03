@@ -197,7 +197,7 @@ class SOFIA:
                     'events': self.flatten([i['Events'] for i in output]),
                     'causal': self.flatten([i['Causal'] for i in output])}
 
-            output_file = open(f'sofia/data/{experiment}_output/{doc_id}.json', 'w')
+            output_file = open(f'/opt/app/data/{doc_id}.json', 'w')
             json.dump(data, output_file)
             output_file.close()
             return output_file.name

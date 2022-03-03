@@ -106,6 +106,8 @@ def get_cdr_text(doc_id, cdr_api, sofia_user, sofia_pass):
 
 
 def upload_sofia_output(doc_id, output_filename, upload_api, sofia_user, sofia_pass, ontology_version):
+    upload = False
+
     metadata = {
         "identity": "sofia",
         "version": "1.3",
@@ -113,19 +115,23 @@ def upload_sofia_output(doc_id, output_filename, upload_api, sofia_user, sofia_p
         "output_version": ontology_version
     }
 
-    form_request = {"file": (output_filename, open(output_filename)),
-                    "metadata": (None, json.dumps(metadata), 'application/json')}
+    if upload:
+        form_request = {"file": (output_filename, open(output_filename)),
+                        "metadata": (None, json.dumps(metadata), 'application/json')}
 
-    http_auth = None
-    if sofia_user is not None and sofia_pass is not None:
-        http_auth = HTTPBasicAuth(sofia_user, sofia_pass)
+        http_auth = None
+        if sofia_user is not None and sofia_pass is not None:
+            http_auth = HTTPBasicAuth(sofia_user, sofia_pass)
 
-    response = requests.post(upload_api, files=form_request, auth=http_auth)
+        response = requests.post(upload_api, files=form_request, auth=http_auth)
 
-    if response.status_code == 201:
-        print(f'uploaded - {output_filename} for doc {doc_id}')
+        if response.status_code == 201:
+            print(f'uploaded - {output_filename} for doc {doc_id}')
+        else:
+            print(f"Uploading of {doc_id} failed with status code {response.status_code}! Please re-try")
     else:
-        print(f"Uploading of {doc_id} failed with status code {response.status_code}! Please re-try")
+        with open(f'/opt/app/data/{doc_id}.meta.json') as f:
+            json.dump(metadata, f)
 
 
 def run_sofia_stream(kafka_broker,
