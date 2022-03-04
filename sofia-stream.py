@@ -106,8 +106,6 @@ def get_cdr_text(doc_id, cdr_api, sofia_user, sofia_pass):
 
 
 def upload_sofia_output(doc_id, output_filename, upload_api, sofia_user, sofia_pass, ontology_version):
-    upload = False
-
     metadata = {
         "identity": "sofia",
         "version": "1.3",
