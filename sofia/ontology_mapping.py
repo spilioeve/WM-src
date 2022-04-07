@@ -1,13 +1,11 @@
 import json
 import os
 import string
+from os.path import isabs
+from pathlib import Path
 
 import yaml
 from nltk.corpus import stopwords
-
-from os.path import isabs
-
-from pathlib import Path
 
 
 class Ontology:
@@ -106,17 +104,13 @@ class Ontology:
         return "", ""
 
     def format_ontology(self, ontology_name, save_file):
-        if isabs(ontology_name):
-            file = ontology_name
-        else:
-            file_name = f'/data/{ontology_name}.yml'
-            file = os.path.dirname(os.path.abspath(__file__)) + file_name
-
+        file_name = f'/data/{ontology_name}.yml'
+        # file_path = os.path.dirname(os.path.abspath(file_name))+file_name
+        file = os.path.dirname(os.path.abspath(__file__)) + file_name
         with open(file) as f:
-            print(f'loading yaml for ontology {file}')
             data = yaml.full_load(f)
         data = data[0]['wm']
-        path = 'base_path'
+        path = ''
         output = {'entity': {}, 'event': {}, 'property': {}}
         output = recurse(data, path, output)
         with open(save_file, 'w') as f:
@@ -128,13 +122,15 @@ def recurse(data, path, output):
     for i in range(len(data)):
         if 'OntologyNode' in data[i].keys():
             semantic_type = data[i]['semantic type']
-            path_new = "{}/{}".format(path, data[i]['name'])
+            path_new = f"{path}/{data[i]['name']}"
+            path_new = path_new.strip('/')
             output[semantic_type][path_new] = data[i]['examples']
             # return output
         else:
             k = list(data[i].keys())[0]
             data_new = data[i][k]
-            path_new = "{}/{}".format(path, k)
+            path_new = f"{path}/{k}"
+            path_new = path_new.strip('/')
             output_new = recurse(data_new, path_new, output)
             for j in output_new: output[j].update(output_new[j])
     return output
