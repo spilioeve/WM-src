@@ -104,9 +104,12 @@ class Ontology:
         return "", ""
 
     def format_ontology(self, ontology_name, save_file):
-        file_name = f'/data/{ontology_name}.yml'
-        # file_path = os.path.dirname(os.path.abspath(file_name))+file_name
-        file = os.path.dirname(os.path.abspath(__file__)) + file_name
+        if isabs(ontology_name):
+            file = ontology_name
+        else:
+            file_name = f'/data/{ontology_name}.yml'
+            file = os.path.dirname(os.path.abspath(__file__)) + file_name
+
         with open(file) as f:
             data = yaml.full_load(f)
         data = data[0]['wm']
