@@ -1,6 +1,6 @@
 distro
 data/
-
+credentials.json
 
 # Byte-compiled / optimized / DLL files
 build
