@@ -36,7 +36,8 @@ class Ontology:
             self.external_ontology = True
             formatted_ontology_file = f'/opt/app/tmp/{Path(ontology_name).with_suffix(".json").name}'
         else:
-            formatted_ontology_file = os.path.dirname(os.path.abspath(__file__)) + f'/data/Ontology_{ontology_name}.json'
+            formatted_ontology_file = os.path.dirname(
+                os.path.abspath(__file__)) + f'/data/Ontology_{ontology_name}.json'
             self.external_ontology = False
 
         print(f'using ontology {formatted_ontology_file}')
@@ -104,9 +105,13 @@ class Ontology:
         return "", ""
 
     def format_ontology(self, ontology_name, save_file):
-        file_name = f'/data/{ontology_name}.yml'
-        # file_path = os.path.dirname(os.path.abspath(file_name))+file_name
-        file = os.path.dirname(os.path.abspath(__file__)) + file_name
+        print(f'formatting ontology {ontology_name} to {save_file}')
+        if isabs(ontology_name):
+            file = ontology_name
+        else:
+            file_name = f'/data/{ontology_name}.yml'
+            file = os.path.dirname(os.path.abspath(__file__)) + file_name
+
         with open(file) as f:
             data = yaml.full_load(f)
         data = data[0]['wm']
@@ -115,6 +120,8 @@ class Ontology:
         output = recurse(data, path, output)
         with open(save_file, 'w') as f:
             json.dump(output, f)
+
+        print(f'finished formatting ontology {ontology_name} to {save_file}')
         return output
 
 
@@ -134,3 +141,4 @@ def recurse(data, path, output):
             output_new = recurse(data_new, path_new, output)
             for j in output_new: output[j].update(output_new[j])
     return output
+
