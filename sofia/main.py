@@ -5,7 +5,6 @@ from os.path import exists
 
 import corenlp
 import pandas as pd
-import pdb
 
 from sofia.causal_extraction import CausalLinks
 from sofia.corenlp_parse import DataExtractor
@@ -28,7 +27,7 @@ def span_to_index(local_index, span_list):
 
 class SOFIA:
     """SOFIA class. Can be invoked with:
-       
+
        ```
        sofia = SOFIA(CoreNLP='path_to_CoreNLP')
        sentence="The intense rain caused flooding in the area. This has harmed the local populace."
@@ -38,7 +37,7 @@ class SOFIA:
        :keyword
        sofia.getOutputFromFiles(document_path, output_name, docs= None)
        ```
-       
+
        In this example, results is an array of JSON objects (one per sentence submitted to SOFIA).
        The final line writes this output to an Excel file at the user specified path.
     """
@@ -157,10 +156,11 @@ class SOFIA:
             event_local_index[span] = event_index
         # TODO: Fix the Causality Model
         #######
+
         # It currently chooses ALL the events. This is wrong, it should choose the ones that do not contain others as arguments
         causal_detector = CausalLinks(events, event_local_index, event2Spans, entities, entity_local_index, sentence,
-                                      lemmas, pos,
-                                      event_scores, entity_scores)
+                                      lemmas, pos, event_scores, entity_scores)
+
         causal_relations = causal_detector.get_causal_nodes()  ### OR TRUE
         output['Causal'] = []
         for relation in causal_relations:
@@ -177,8 +177,7 @@ class SOFIA:
             output['Causal'].append(dict(zip(self.causal_headers, causal_info)))
         return output
 
-    def get_online_output(self, text, doc_id, experiment='generic', save=True, scoring=False):
-        print(f'sofia processing started for {doc_id}')
+    def get_online_output(self, text, doc_id, experiment='generic', save=True, compressed=False, scoring=False):
         # if text!= None:
         if not exists(f'sofia/data/{experiment}_output'):
             makedirs(f'sofia/data/{experiment}_output')
@@ -192,12 +191,15 @@ class SOFIA:
                 annotations = self.annotate(text, experiment, save=save, doc_id=doc_id)
             data_extractor = DataExtractor(annotations)
             output = self.get_output(data_extractor, doc_id, scoring=scoring)
+
             # print("output!")
             data = {'entities': self.flatten([i['Entities'] for i in output]),
                     'events': self.flatten([i['Events'] for i in output]),
                     'causal': self.flatten([i['Causal'] for i in output])}
+            if compressed:
+                data = self.compress_output(data)
+            output_file = open(f'sofia/data/{experiment}_output/{doc_id}.json', 'w')
 
-            output_file = open(f'/opt/app/data/{doc_id}.json', 'w')
             json.dump(data, output_file)
             output_file.close()
             return output_file.name
@@ -269,6 +271,27 @@ class SOFIA:
     #     print('Parsing done')
     #     #self.results2excel('sofia/data/'+output_name+'.xlsx', output)
     #     return data
+
+    def compress_output(self, data):
+        events = []
+        entities = []
+        events_index = set()
+        for c in data['causal']:
+            events_index.add(c['Cause Index'])
+            events_index.add(c['Effect Index'])
+        entities_index = set()
+
+        for event in data['events']:
+            if event['Event Index'] in events_index:
+                events.append(event)
+                if event['Agent Index'] != "":
+                    entities_index.add(event['Agent Index'])
+                if event['Patient Index'] != "":
+                    entities_index.add(event['Patient Index'])
+        for entity in data['entities']:
+            if entity['Entity Index'] in entities_index:
+                entities.append(entity)
+        return {'causal': data['causal'], 'events': events, 'entities': entities}
 
     def flatten(self, l):
         return [item for sublist in l for item in sublist]

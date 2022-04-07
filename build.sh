@@ -11,4 +11,4 @@ else
     curl -L -o ./distro/stanford-corenlp-4.2.0.zip $CORENLP_DOWNLOAD
 fi
 
-docker build -t sofia:latest .
+docker build -t sofia:wm-aug-2.3 .
