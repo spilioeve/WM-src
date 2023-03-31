@@ -7,7 +7,7 @@ stanford-corenlp==3.9.2
 pandas==0.23.4
 Flask==1.0.2
 APScheduler==3.5.3
-redis==3.0.1
+redis==4.4.4
 faust
 requests
 PyYAML
